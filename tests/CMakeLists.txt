@@ -13,6 +13,13 @@ add_executable(tests
 		nfa/nfa-product.cc
 		nfa/nfa-profiling.cc
 		nfa/nfa-plumbing.cc
+		lvlfa/delta.cc
+		lvlfa/lvlfa.cc
+		lvlfa/builder.cc
+		lvlfa/lvlfa-concatenation.cc
+		lvlfa/lvlfa-intersection.cc
+		lvlfa/lvlfa-profiling.cc
+		lvlfa/lvlfa-plumbing.cc
 		strings/nfa-noodlification.cc
 		strings/nfa-segmentation.cc
 		strings/nfa-string-solving.cc
