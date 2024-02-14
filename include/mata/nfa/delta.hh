@@ -122,6 +122,7 @@ public:
     // dangerous, breaks the sortedness invariant
     using super::push_back;
     // is adding non-const version as well ok?
+    using super::front;
     using super::back;
     using super::pop_back;
     using super::filter;
