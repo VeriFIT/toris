@@ -1,4 +1,4 @@
-/* tests-lvlfa-intersection.cc -- Tests for intersection of LVLFAs
+/* tests-nft-intersection.cc -- Tests for intersection of NFTs
  */
 
 
@@ -7,9 +7,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
-#include "mata/lvlfa/lvlfa.hh"
+#include "mata/nft/nft.hh"
 
-using namespace mata::lvlfa;
+using namespace mata::nft;
 using namespace mata::utils;
 using namespace mata::parser;
 
@@ -55,9 +55,9 @@ using namespace mata::parser;
 
 // }}}
 
-TEST_CASE("mata::lvlfa::intersection()")
+TEST_CASE("mata::nft::intersection()")
 { // {{{
-    Lvlfa a, b, res;
+    Nft a, b, res;
     std::unordered_map<std::pair<State, State>, State> prod_map;
 
     SECTION("Intersection of empty automata")
@@ -173,11 +173,11 @@ TEST_CASE("mata::lvlfa::intersection()")
     }
 } // }}}
 
-TEST_CASE("mata::lvlfa::intersection() with preserving epsilon transitions")
+TEST_CASE("mata::nft::intersection() with preserving epsilon transitions")
 {
     std::unordered_map<std::pair<State, State>, State> prod_map;
 
-    Lvlfa a{6};
+    Nft a{6};
     a.initial.insert(0);
     a.final.insert({1, 4, 5});
     a.delta.add(0, EPSILON, 1);
@@ -188,7 +188,7 @@ TEST_CASE("mata::lvlfa::intersection() with preserving epsilon transitions")
     a.delta.add(2, EPSILON, 3);
     a.delta.add(3, 'a', 5);
 
-    Lvlfa b{10};
+    Nft b{10};
     b.initial.insert(0);
     b.final.insert({2, 4, 8, 7});
     b.delta.add(0, 'b', 1);
@@ -202,7 +202,7 @@ TEST_CASE("mata::lvlfa::intersection() with preserving epsilon transitions")
     b.delta.add(6, 'a', 9);
     b.delta.add(6, 'b', 7);
 
-    Lvlfa result{intersection(a, b, EPSILON, &prod_map) };
+    Nft result{intersection(a, b, EPSILON, &prod_map) };
 
     // Check states.
     CHECK(result.is_state(prod_map[{0, 0}]));
@@ -273,9 +273,9 @@ TEST_CASE("mata::lvlfa::intersection() with preserving epsilon transitions")
     CHECK(result.delta.state_post(prod_map[{ 5, 8 }]).empty());
 }
 
-TEST_CASE("mata::lvlfa::intersection() for profiling", "[.profiling],[intersection]")
+TEST_CASE("mata::nft::intersection() for profiling", "[.profiling],[intersection]")
 {
-    Lvlfa a{6};
+    Nft a{6};
     a.initial.insert(0);
     a.final.insert({1, 4, 5});
     a.delta.add(0, EPSILON, 1);
@@ -286,7 +286,7 @@ TEST_CASE("mata::lvlfa::intersection() for profiling", "[.profiling],[intersecti
     a.delta.add(2, EPSILON, 3);
     a.delta.add(3, 'a', 5);
 
-    Lvlfa b{10};
+    Nft b{10};
     b.initial.insert(0);
     b.final.insert({2, 4, 8, 7});
     b.delta.add(0, 'b', 1);
@@ -301,12 +301,12 @@ TEST_CASE("mata::lvlfa::intersection() for profiling", "[.profiling],[intersecti
     b.delta.add(6, 'b', 7);
 
     for (size_t i{ 0 }; i < 10000; ++i) {
-        Lvlfa result{intersection(a, b) };
+        Nft result{intersection(a, b) };
     }
 }
 
-TEST_CASE("mata::lvlfa::Move semantics", "[.profiling][std::move]") {
-    Lvlfa b{10};
+TEST_CASE("mata::nft::Move semantics", "[.profiling][std::move]") {
+    Nft b{10};
     b.initial.insert(0);
     b.final.insert({2, 4, 8, 7});
     b.delta.add(0, 'b', 1);
@@ -321,7 +321,7 @@ TEST_CASE("mata::lvlfa::Move semantics", "[.profiling][std::move]") {
     b.delta.add(6, 'b', 7);
 
     for (size_t i{ 0 }; i < 1'000'000; ++i) {
-        Lvlfa a{ std::move(b) };
+        Nft a{ std::move(b) };
         a.initial.insert(1);
         b = std::move(a);
     }

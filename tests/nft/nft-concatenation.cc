@@ -1,4 +1,4 @@
-/* tests-lvlfa-concatenation.cc -- Tests for concatenation of NFAs
+/* tests-nft-concatenation.cc -- Tests for concatenation of NFAs
  */
 
 
@@ -7,11 +7,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
-#include "mata/lvlfa/lvlfa.hh"
-#include "mata/lvlfa/strings.hh"
+#include "mata/nft/nft.hh"
+#include "mata/nft/strings.hh"
 #include "mata/parser/re2parser.hh"
 
-using namespace mata::lvlfa;
+using namespace mata::nft;
 using namespace mata::strings;
 using namespace mata::utils;
 using namespace mata::parser;
@@ -60,10 +60,10 @@ using Symbol = mata::Symbol;
 
 // }}}
 
-TEST_CASE("mata::lvlfa::concatenate()") {
-    Lvlfa lhs{};
-    Lvlfa rhs{};
-    Lvlfa result{};
+TEST_CASE("mata::nft::concatenate()") {
+    Nft lhs{};
+    Nft rhs{};
+    Nft result{};
 
     SECTION("Empty automaton without states") {
         result = concatenate(lhs, rhs);
@@ -349,10 +349,10 @@ TEST_CASE("mata::lvlfa::concatenate()") {
     }
 }
 
-TEST_CASE("mata::lvlfa::concatenate() over epsilon symbol") {
-    Lvlfa lhs{};
-    Lvlfa rhs{};
-    Lvlfa result{};
+TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
+    Nft lhs{};
+    Nft rhs{};
+    Nft result{};
 
     SECTION("Empty automaton") {
         lhs.add_state();
@@ -577,40 +577,40 @@ TEST_CASE("mata::lvlfa::concatenate() over epsilon symbol") {
     }
 }
 
-TEST_CASE("mata::lvlfa::(a|b)*") {
-    Lvlfa aut1;
+TEST_CASE("mata::nft::(a|b)*") {
+    Nft aut1;
     mata::parser::create_nfa(&aut1, "a*");
-    Lvlfa aut2;
+    Nft aut2;
     mata::parser::create_nfa(&aut2, "b*");
-    Lvlfa aut3;
+    Nft aut3;
     mata::parser::create_nfa(&aut3, "a*b*");
     auto concatenated_aut{ concatenate(aut1, aut2) };
     CHECK(are_equivalent(concatenated_aut, aut3));
 }
 
-TEST_CASE("mata::lvlfa::Bug with epsilon transitions") {
-    Lvlfa lvlfa1{};
-    lvlfa1.initial.insert(0);
-    lvlfa1.final.insert(3);
-    lvlfa1.delta.add(0, 97, 0);
-    lvlfa1.delta.add(0, 98, 0);
-    lvlfa1.delta.add(0, 99, 0);
-    lvlfa1.delta.add(0, 100, 0);
-    lvlfa1.delta.add(0, EPSILON, 1);
-    lvlfa1.delta.add(1, 97, 2);
-    lvlfa1.delta.add(2, 98, 3);
+TEST_CASE("mata::nft::Bug with epsilon transitions") {
+    Nft nft1{};
+    nft1.initial.insert(0);
+    nft1.final.insert(3);
+    nft1.delta.add(0, 97, 0);
+    nft1.delta.add(0, 98, 0);
+    nft1.delta.add(0, 99, 0);
+    nft1.delta.add(0, 100, 0);
+    nft1.delta.add(0, EPSILON, 1);
+    nft1.delta.add(1, 97, 2);
+    nft1.delta.add(2, 98, 3);
 
-    Lvlfa lvlfa2{};
-    lvlfa2.initial.insert(0);
-    lvlfa2.final.insert(0);
-    lvlfa2.delta.add(0, 97, 0);
-    lvlfa2.delta.add(0, 98, 0);
-    lvlfa2.delta.add(0, 99, 0);
-    lvlfa2.delta.add(0, 100, 0);
+    Nft nft2{};
+    nft2.initial.insert(0);
+    nft2.final.insert(0);
+    nft2.delta.add(0, 97, 0);
+    nft2.delta.add(0, 98, 0);
+    nft2.delta.add(0, 99, 0);
+    nft2.delta.add(0, 100, 0);
 
-    auto result{ concatenate(lvlfa1, lvlfa2, true) };
+    auto result{ concatenate(nft1, nft2, true) };
 
-    Lvlfa expected{ lvlfa1 };
+    Nft expected{ nft1 };
     expected.delta.add(3, EPSILON, 4);
     expected.delta.add(4, 97, 4);
     expected.delta.add(4, 98, 4);
@@ -621,13 +621,13 @@ TEST_CASE("mata::lvlfa::Bug with epsilon transitions") {
     CHECK(are_equivalent(result, expected));
 }
 
-TEST_CASE("mata::lvlfa::concatenate() inplace") {
+TEST_CASE("mata::nft::concatenate() inplace") {
 
 
     SECTION("Empty automaton without states") {
-        Lvlfa lhs{};
-        Lvlfa rhs{};
-        Lvlfa result{};
+        Nft lhs{};
+        Nft rhs{};
+        Nft result{};
         result = lhs.concatenate(rhs);
 
         CHECK(result.initial.empty());
@@ -637,9 +637,9 @@ TEST_CASE("mata::lvlfa::concatenate() inplace") {
     }
 
     SECTION("One empty automaton without states") {
-        Lvlfa lhs{};
-        Lvlfa rhs{};
-        Lvlfa result{};
+        Nft lhs{};
+        Nft rhs{};
+        Nft result{};
         rhs.add_state();
         result = lhs.concatenate(rhs);
 
@@ -650,9 +650,9 @@ TEST_CASE("mata::lvlfa::concatenate() inplace") {
     }
 
     SECTION("Automaton A concatenate automaton B") {
-        Lvlfa lhs{};
-        Lvlfa rhs{};
-        Lvlfa result{};
+        Nft lhs{};
+        Nft rhs{};
+        Nft result{};
         lhs.add_state(10);
         FILL_WITH_AUT_A(lhs);
         rhs.add_state(14);
@@ -669,9 +669,9 @@ TEST_CASE("mata::lvlfa::concatenate() inplace") {
     }
 
     SECTION("Sample automata") {
-        Lvlfa lhs{};
-        Lvlfa rhs{};
-        Lvlfa result{};
+        Nft lhs{};
+        Nft rhs{};
+        Nft result{};
         lhs.add_state();
         lhs.initial.insert(0);
         lhs.final.insert(0);
@@ -700,8 +700,8 @@ TEST_CASE("mata::lvlfa::concatenate() inplace") {
     }
 
     SECTION("Delta smaller than states") {
-        Lvlfa lhs{};
-        Lvlfa rhs{};
+        Nft lhs{};
+        Nft rhs{};
 
         lhs.delta.add(0, 65, 5);
         lhs.initial.insert(0);
@@ -713,12 +713,12 @@ TEST_CASE("mata::lvlfa::concatenate() inplace") {
         rhs.initial.insert(0);
         rhs.final.insert(7);
 
-        Lvlfa result = lhs.concatenate(rhs);
+        Nft result = lhs.concatenate(rhs);
         CHECK(!result.is_lang_empty());
     }
 
     SECTION("the same automata") {
-        Lvlfa lhs{};
+        Nft lhs{};
 
         lhs.add_state();
         lhs.initial.insert(0);
@@ -731,14 +731,14 @@ TEST_CASE("mata::lvlfa::concatenate() inplace") {
         lhs.delta.add(0, 116, 0);
 
         size_t lhs_size = lhs.num_of_states();
-        Lvlfa result = lhs.concatenate(lhs);
+        Nft result = lhs.concatenate(lhs);
         CHECK(result.num_of_states() == lhs_size * 2);
     }
 
 }
 
-TEST_CASE("mata::lvlfa::Concat_inplace performance", "[.profiling]") {
-    Lvlfa base;
+TEST_CASE("mata::nft::Concat_inplace performance", "[.profiling]") {
+    Nft base;
     base.initial.insert(0);
     base.final.insert(4);
     base.delta.add(0, 45, 1);
@@ -1006,7 +1006,7 @@ TEST_CASE("mata::lvlfa::Concat_inplace performance", "[.profiling]") {
     base.delta.add(3, 122, 4);
     base.delta.add(3, 124, 4);
 
-    Lvlfa concat;
+    Nft concat;
     concat.initial.insert(1);
     concat.final.insert(0);
     concat.final.insert(1);
