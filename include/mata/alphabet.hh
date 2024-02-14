@@ -82,10 +82,15 @@ public:
 
     bool operator==(const Alphabet &) const = delete;
 
+    /**
+     * Checks whether the alphabet has any symbols.
+     */
+    virtual bool empty() const = 0;
+
     virtual void clear() { throw std::runtime_error("Unimplemented"); }
 
 protected:
-    virtual const void *address() const { return this; }
+    virtual const void* address() const { return this; }
 }; // class Alphabet.
 
 /**
@@ -116,6 +121,8 @@ public:
     IntAlphabet(const IntAlphabet&) = default;
 
     IntAlphabet& operator=(const IntAlphabet& int_alphabet) = delete;
+
+    bool empty() const override { return false; }
 
     void clear() override { throw std::runtime_error("Nonsensical use of clear() on IntAlphabet."); }
 
@@ -238,6 +245,8 @@ public:
      * @return The number of symbols.
      */
     size_t get_number_of_symbols() const { return symbols_.size(); }
+
+    bool empty() const override { return symbols_.empty(); }
 
 private:
     mata::utils::OrdVector<Symbol> symbols_{}; ///< Map of string transition symbols to symbol values.
@@ -390,6 +399,8 @@ public:
      * @return Map mapping strings to symbols used internally in Mata.
      */
     const StringToSymbolMap& get_symbol_map() const { return symbol_map_; }
+
+    bool empty() const override { return symbol_map_.empty(); }
 
 private:
     StringToSymbolMap symbol_map_{}; ///< Map of string transition symbols to symbol values.
