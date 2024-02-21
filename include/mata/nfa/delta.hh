@@ -126,6 +126,7 @@ public:
     using super::back;
     using super::pop_back;
     using super::filter;
+    using super::clear;
 
     using super::erase;
 
