@@ -44,9 +44,9 @@
 namespace mata::nfa {
 
 /**
- * A struct representing an NFA.
+ * A class representing an NFA.
  */
-struct Nfa {
+class Nfa {
 public:
     /**
      * @brief For state q, delta[q] keeps the list of transitions ordered by symbols.
@@ -481,7 +481,7 @@ public:
      * @pre @c this is a deterministic automaton.
      */
     Nfa& complement_deterministic(const mata::utils::OrdVector<Symbol>& symbols, std::optional<State> sink_state = std::nullopt);
-}; // struct Nfa.
+}; // class Nfa.
 
 // Allow variadic number of arguments of the same type.
 //
