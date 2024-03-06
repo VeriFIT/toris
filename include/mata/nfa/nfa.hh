@@ -428,7 +428,7 @@ public:
      * you can get all words by calling
      *      get_words(aut.num_of_states())
      */
-    std::set<Word> get_words(unsigned max_length) const;
+    std::set<Word> get_words(size_t max_length) const;
 
     /**
      * @brief Get any arbitrary accepted word in the language of the automaton.
