@@ -445,8 +445,7 @@ Nft ReluctantReplace::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, S
             const State final{ next_state };
             nft_reluctant_leftmost.final.insert(final);
             nft_reluctant_leftmost.insert_identity(final, alphabet_symbols.to_vector());
-
-            nft_reluctant_leftmost.insert_word_by_parts(final, { { begin_marker}, { EPSILON } }, final);
+            nft_reluctant_leftmost.insert_word_by_parts(final, { { begin_marker }, { EPSILON } }, final);
             break;
         };
         default: {
