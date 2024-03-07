@@ -4300,7 +4300,8 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
     SECTION("Insert 'a'") {
         SECTION("src < tgt") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(1, {'a'}, 3);
+            State new_tgt = nfa.insert_word(1, {'a'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(1, 'a', 3);
@@ -4310,7 +4311,8 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
 
         SECTION("src < tgt && final.contains(tgt)") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(1, {'a'}, 4);
+            State new_tgt = nfa.insert_word(1, {'a'}, 4);
+            CHECK(new_tgt == 4);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(1, 'a', 4);
@@ -4320,7 +4322,8 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
 
         SECTION("tgt < src") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(3, {'a'}, 1);
+            State new_tgt = nfa.insert_word(3, {'a'}, 1);
+            CHECK(new_tgt == 1);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(3, 'a', 1);
@@ -4331,7 +4334,8 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
 
         SECTION("tgt < src && final.contains(tgt)") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(4, {'a'}, 1);
+            State new_tgt = nfa.insert_word(4, {'a'}, 1);
+            CHECK(new_tgt == 1);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(4, 'a', 1);
@@ -4341,7 +4345,8 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
 
         SECTION("self-loop") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(3, {'a'}, 3);
+            State new_tgt = nfa.insert_word(3, {'a'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(3, 'a', 3);
@@ -4351,10 +4356,25 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
 
         SECTION("self-loop && final.contains(tgt)") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(4, {'a'}, 4);
+            State new_tgt = nfa.insert_word(4, {'a'}, 4);
+            CHECK(new_tgt == 4);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(4, 'a', 4);
+
+            CHECK(are_equivalent(nfa, expected));
+        }
+
+        SECTION("tgt is not specified") {
+            nfa = Nfa(delta, { 0 });
+            State new_tgt = nfa.insert_word(1, {'a'});
+            nfa.final.insert(new_tgt);
+
+            expected = Nfa(3, { 0 }, { 2 });
+            expected.delta.add(0, 0, 1);
+            expected.delta.add(0, 4, 0);
+            expected.delta.add(1, 5, 1);
+            expected.delta.add(1, 'a', 2);
 
             CHECK(are_equivalent(nfa, expected));
         }
@@ -4363,7 +4383,8 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
     SECTION("Insert 'ab'") {
         SECTION("src < tgt") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(1, {'a', 'b'}, 3);
+            State new_tgt = nfa.insert_word(1, {'a', 'b'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(1, 'a', 5);
@@ -4374,7 +4395,8 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
 
         SECTION("src < tgt && final.contains(tgt)") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(1, {'a', 'b'}, 4);
+            State new_tgt = nfa.insert_word(1, {'a', 'b'}, 4);
+            CHECK(new_tgt == 4);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(1, 'a', 5);
@@ -4385,7 +4407,8 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
 
         SECTION("tgt < src") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(3, {'a', 'b'}, 1);
+            State new_tgt = nfa.insert_word(3, {'a', 'b'}, 1);
+            CHECK(new_tgt == 1);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(3, 'a', 5);
@@ -4397,7 +4420,8 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
 
         SECTION("tgt < src && final.contains(tgt)") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(4, {'a', 'b'}, 1);
+            State new_tgt = nfa.insert_word(4, {'a', 'b'}, 1);
+            CHECK(new_tgt == 1);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(4, 'a', 5);
@@ -4408,7 +4432,8 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
 
         SECTION("self-loop") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(3, {'a', 'b'}, 3);
+            State new_tgt = nfa.insert_word(3, {'a', 'b'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(3, 'a', 5);
@@ -4419,7 +4444,8 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
 
         SECTION("self-loop && final.contains(tgt)") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(4, {'a', 'b'}, 4);
+            State new_tgt = nfa.insert_word(4, {'a', 'b'}, 4);
+            CHECK(new_tgt == 4);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(4, 'a', 5);
@@ -4427,12 +4453,29 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
 
             CHECK(are_equivalent(nfa, expected));
         }
+
+        SECTION("tgt is not specified") {
+            nfa = Nfa(delta, { 0 });
+            State new_tgt = nfa.insert_word(1, {'a', 'b'});
+            nfa.final.insert(new_tgt);
+
+            expected = Nfa(4, { 0 }, { 3 });
+            expected.delta.add(0, 0, 1);
+            expected.delta.add(0, 4, 0);
+            expected.delta.add(1, 5, 1);
+            expected.delta.add(1, 'a', 2);
+            expected.delta.add(2, 'b', 3);
+
+            CHECK(are_equivalent(nfa, expected));
+        }
+
     }
 
     SECTION("Insert 'abcd'") {
         SECTION("src < tgt") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(1, {'a', 'b', 'c', 'd'}, 3);
+            State new_tgt = nfa.insert_word(1, {'a', 'b', 'c', 'd'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(1, 'a', 5);
@@ -4445,7 +4488,8 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
 
         SECTION("src < tgt && final.contains(tgt)") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(1, {'a', 'b', 'c', 'd'}, 4);
+            State new_tgt = nfa.insert_word(1, {'a', 'b', 'c', 'd'}, 4);
+            CHECK(new_tgt == 4);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(1, 'a', 5);
@@ -4458,7 +4502,8 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
 
         SECTION("tgt < src") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(3, {'a', 'b', 'c', 'd'}, 1);
+            State new_tgt = nfa.insert_word(3, {'a', 'b', 'c', 'd'}, 1);
+            CHECK(new_tgt == 1);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(3, 'a', 5);
@@ -4472,7 +4517,8 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
 
         SECTION("tgt < src && final.contains(tgt)") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(4, {'a', 'b', 'c', 'd'}, 1);
+            State new_tgt = nfa.insert_word(4, {'a', 'b', 'c', 'd'}, 1);
+            CHECK(new_tgt == 1);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(4, 'a', 5);
@@ -4485,7 +4531,8 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
 
         SECTION("self-loop") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(3, {'a', 'b', 'c', 'd'}, 3);
+            State new_tgt = nfa.insert_word(3, {'a', 'b', 'c', 'd'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(3, 'a', 5);
@@ -4498,13 +4545,31 @@ TEST_CASE("mata::nfa::Nfa::insert_word()") {
 
         SECTION("self-loop && final.contains(tgt)") {
             nfa = Nfa(delta, { 0 }, { 4 });
-            nfa.insert_word(4, {'a', 'b', 'c', 'd'}, 4);
+            State new_tgt = nfa.insert_word(4, {'a', 'b', 'c', 'd'}, 4);
+            CHECK(new_tgt == 4);
 
             expected = Nfa(delta, { 0 }, { 4 });
             expected.delta.add(4, 'a', 5);
             expected.delta.add(5, 'b', 6);
             expected.delta.add(6, 'c', 7);
             expected.delta.add(7, 'd', 4);
+
+            CHECK(are_equivalent(nfa, expected));
+        }
+
+        SECTION("tgt is not specified") {
+            nfa = Nfa(delta, { 0 });
+            State new_tgt = nfa.insert_word(1, {'a', 'b', 'c', 'd'});
+            nfa.final.insert(new_tgt);
+
+            expected = Nfa(6, { 0 }, { 5 });
+            expected.delta.add(0, 0, 1);
+            expected.delta.add(0, 4, 0);
+            expected.delta.add(1, 5, 1);
+            expected.delta.add(1, 'a', 2);
+            expected.delta.add(2, 'b', 3);
+            expected.delta.add(3, 'c', 4);
+            expected.delta.add(4, 'd', 5);
 
             CHECK(are_equivalent(nfa, expected));
         }
