@@ -182,9 +182,6 @@ public:
     explicit EnumAlphabet(const EnumAlphabet* const alphabet): EnumAlphabet(*alphabet) {}
     EnumAlphabet(EnumAlphabet&& rhs) = default;
 
-    EnumAlphabet& operator=(const EnumAlphabet& rhs) = default;
-    EnumAlphabet& operator=(EnumAlphabet&& rhs) = default;
-
     utils::OrdVector<Symbol> get_alphabet_symbols() const override { return symbols_; }
     utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const override {
         return symbols_.difference(symbols);
@@ -192,7 +189,9 @@ public:
 
     std::string reverse_translate_symbol(Symbol symbol) const override;
 
-public:
+    EnumAlphabet& operator=(const EnumAlphabet& rhs) = default;
+    EnumAlphabet& operator=(EnumAlphabet&& rhs) = default;
+
     /**
      * @brief Expand alphabet by symbols from the passed @p symbols.
      *
@@ -302,9 +301,6 @@ public:
     explicit OnTheFlyAlphabet(const OnTheFlyAlphabet* const alphabet): OnTheFlyAlphabet(*alphabet) {}
     explicit OnTheFlyAlphabet(StringToSymbolMap str_sym_map) : symbol_map_(std::move(str_sym_map)) {}
 
-    OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs) = default;
-    OnTheFlyAlphabet& operator=(OnTheFlyAlphabet&& rhs) = default;
-
     /**
      * Create alphabet from a list of symbol names.
      * @param symbol_names Names for symbols on transitions.
@@ -330,6 +326,9 @@ public:
     std::string reverse_translate_symbol(Symbol symbol) const override;
 
 public:
+    OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs) = default;
+    OnTheFlyAlphabet& operator=(OnTheFlyAlphabet&& rhs) = default;
+
     /**
      * @brief Expand alphabet by symbols from the passed @p symbol_names.
      *
