@@ -5,8 +5,10 @@
 #include <list>
 #include <unordered_set>
 #include <iterator>
+#include <unordered_map>
 
 // MATA headers
+#include "mata/alphabet.hh"
 #include "mata/nfa/delta.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/nfa/nfa.hh"
@@ -60,6 +62,11 @@ namespace {
         return alph + x * alph_size + y * alph_size * no_states;
     }
 
+    typedef struct{
+        size_t index;
+        bool used;
+    }Used_symbol;
+
     Simlib::Util::BinaryRelation compute_iny_direct_simulation(const Nfa& aut) {
         // ! Preprocessing
         Nfa reverted_nfa;
@@ -74,63 +81,71 @@ namespace {
         size_t no_states = aut.num_of_states();
         size_t matrix_size = no_states * no_states * alph_syms.size();
 
-        std::vector<int> matrix;
-        matrix.resize(matrix_size);
-        //size_t ***matrix;
+        std::vector<int> matrix (matrix_size, 0);
+        std::unordered_map<Symbol, Used_symbol> index_map;
+
+        for (size_t x = 0; x < alph_syms.size(); x++){ // Helper hash table, that matches symbols to matrix indexes (x)
+            Used_symbol data;
+            data.used = 0;
+            data.index = x;
+            index_map.insert({alph_syms[x], data});
+        }
 
         result_sim_tmp.resize(no_states);
-        for (int i = 0; i < no_states; i++){
+        for (size_t i = 0; i < no_states; i++){
             result_sim_tmp[i].resize(no_states, true);
         }
-
-        // Matrix allocation
-        /*
-        matrix = static_cast<size_t ***>(malloc(sizeof(size_t **) * alph_syms.size()));
-        for (size_t i = 0; i < alph_syms.size(); i++) {
-            matrix[i] = static_cast<size_t **>(malloc(sizeof(size_t *) * no_states));
-            for (size_t j = 0; j < no_states; j++) {
-                matrix[i][j] = static_cast<size_t *>(malloc(sizeof(size_t) * no_states));
-            }
-        }
-        */
 
         reverted_nfa = revert(aut); // Reverted NFA
         // ! End of preprocessing
 
         // ! Initial refinement
-        for (size_t x = 0; x < alph_syms.size(); x++) {
-            for (size_t p = 0; p < no_states; p++) {
-                for (size_t q = 0; q < no_states; q++) {
-                    size_t q_size;
+        for (size_t p = 0; p < no_states; p++) {
+            for (size_t q = 0; q < no_states; q++) {
+                // Check final
+                if (aut.final.contains(p) && !aut.final.contains(q)) {
+                    if (result_sim_tmp[p][q] != false) {
+                        worklist.push_back(std::pair(p,q)); // worklist append
+                        result_sim_tmp[p][q] = false;
+                    }
+                }
+                auto symbol_q = aut.delta[q].begin();
+                for (size_t x = 0; x < alph_syms.size(); x++) {
+
                     size_t p_size;
-
-                    auto symbol_q = aut.delta[q].find(alph_syms[x]);
-                    if (symbol_q == aut.delta[q].end()) {
-                        matrix[index_fn(x, p, q, alph_syms.size(), no_states)] = 0;
-                        //matrix[x][p][q] = 0;
-                        q_size = 0;
-                    } else {
-                        q_size = (*symbol_q).num_of_targets();
-                        matrix[index_fn(x, p, q, alph_syms.size(), no_states)] = q_size;
-                        //matrix[x][p][q] = q_size;
+                    size_t q_size;
+                    size_t x_index;
+                    if (symbol_q == aut.delta[q].end()){ // If we searched all symbols in q
+                        break;
                     }
 
-                    auto symbol_p = aut.delta[p].find(alph_syms[x]);
-                    if (symbol_p == aut.delta[p].end()) {
-                        p_size = 0;
-                    } else {
-                        p_size = (*symbol_p).num_of_targets();
-                    }
-                    if ((p_size != 0 && q_size == 0) || (aut.final.contains(p) && !aut.final.contains(q))) {
+                    // Helper variables
+                    Symbol active_sym = (*symbol_q).symbol; // get the active symbol
+                    auto x_index_it = index_map.find(active_sym); // get the index of the symbol
+                    x_index = (*x_index_it).second.index;
+                    (*x_index_it).second.used = 1;
+
+                    // Compute_lenght
+                    q_size = (*symbol_q).num_of_targets();
+                    // Store_into_matrix
+                    matrix[index_fn(x_index, p, q, alph_syms.size(), no_states)] = q_size;
+                std::advance(symbol_q, 1);
+                }
+                for(SymbolPost active_sym : aut.delta[p]){
+                    auto x_index_it = index_map.find(active_sym.symbol); // get the index of the symbol
+                    if ((*x_index_it).second.used == 0){
                         if (result_sim_tmp[p][q] != false) {
-                            worklist.push_back(std::pair(p,q)); // worklist append
-                            result_sim_tmp[p][q] = false;
+                                worklist.push_back(std::pair(p,q)); // worklist append
+                                result_sim_tmp[p][q] = false;
                         }
                     }
                 }
+                for (std::pair<const Symbol, Used_symbol>& index : index_map){
+                    index.second.used = 0;
+                }
             }
         }
-        // ! End of initional refinement
+        // ! End of initial refinement
 
         // ! Propagate until fixpoint
         size_t worklist_size;
@@ -145,9 +160,7 @@ namespace {
                     continue;
                 } 
                 for (State q: (*symbol_q_).targets.to_vector()) {
-                    //matrix[x][working_pair.first][q]--;
-                    matrix[index_fn(x, working_pair.first, q, alph_syms.size(), no_states)]--;
-                    if (matrix[index_fn(x, working_pair.first, q, alph_syms.size(), no_states)] == 0) {
+                    if (--matrix[index_fn(x, working_pair.first, q, alph_syms.size(), no_states)] == 0) {
                         auto symbol_p_ = reverted_nfa.delta[working_pair.first].find(alph_syms[x]);
                         if (symbol_p_ == reverted_nfa.delta[working_pair.first].end()) {
                             continue;
@@ -164,27 +177,8 @@ namespace {
         }
         // ! End of Propagate until fixpoint
 
-        //Free the matrix
-        /*
-        for (size_t i = 0; i < alph_syms.size(); i++){
-            for (size_t j = 0; j < no_states; j++){
-                free(matrix[i][j]);
-            }
-            free(matrix[i]);
-        }
-        free(matrix);
-        */
-
-        //Printig of the final relation:
-        /*
-        std::cout << "The final relation is:" << std::endl;
-        for (std::pair final: result_sim){
-            std::cout << final.first << " , " << final.second << std::endl;
-        }
-        */
-        Simlib::Util::BinaryRelation tmp = Simlib::Util::BinaryRelation(result_sim_tmp);
-        return tmp; // This does not work yet, only the calculation of the relation is done
-        // The result is stored in result_sim vector
+        Simlib::Util::BinaryRelation tmp {result_sim_tmp};
+        return tmp;
     }
 
     Nfa reduce_size_by_simulation(const Nfa& aut, StateRenaming &state_renaming) {
