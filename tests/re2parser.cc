@@ -1315,3 +1315,41 @@ TEST_CASE("mata::Parser bug epsilon")
         CHECK(x.is_in_lang(Run{Word{'a', 'a', 'a', 'a'}, {}}));
     }
 } // }}}
+
+TEST_CASE("mata::parser bug inserting nonexistent symbols") {
+     SECTION("Benchmark example") {
+         std::string regex {
+                 "[\\x{20}\\x{27}\\x{2f}\\x{3c}\\x{3d}\\x{3e}\\x{43}\\x{49}\\x{50}\\x{52}\\x{53}\\x{54}\\x{5c"
+                 "}\\x{61}\\x{62}\\x{63}\\x{64}\\x{66}\\x{6c}\\x{6e}\\x{70}\\x{72}\\x{73}\\x{74}\\x{ff}]*"
+                 "\\x{5c}\\x{3c}\\x{53}\\x{43}\\x{52}\\x{49}\\x{50}\\x{54}[\\x{20}\\x{27}\\x{2f}\\x{3c}\\x{3d}\\x{3e}\\x{43}"
+                 "\\x{49}\\x{50}\\x{52}\\x{53}\\x{54}\\x{5c}\\x{61}\\x{62}\\x{63}\\x{64}\\x{66}\\x{6c}\\x{6e}\\x{70}"
+                 "\\x{72}\\x{73}\\x{74}\\x{ff}]*"
+         };
+         Nfa x;
+         mata::parser::create_nfa(&x, regex);
+         x.print_to_dot(std::cout);
+         std::cout << x.delta.get_used_symbols() << "\n";
+     }
+     SECTION("Still valid example") {
+         std::string regex { "\\x{7f}" };
+         Nfa x;
+         mata::parser::create_nfa(&x, regex);
+         x.print_to_dot(std::cout);
+         std::cout << x.delta.get_used_symbols() << "\n";
+     }
+    SECTION("Minimal example") {
+        std::string regex { "\\x{80}" };
+        Nfa x;
+        // Should produce only a single transition over 128 (0x80), but for some reason, produces also 194 (0xC2).
+        mata::parser::create_nfa(&x, regex);
+        x.print_to_dot(std::cout);
+        std::cout << x.delta.get_used_symbols() << "\n";
+    }
+    SECTION("Another example") {
+        std::string regex { "\\x{fe}" };
+        Nfa x;
+        mata::parser::create_nfa(&x, regex);
+        x.print_to_dot(std::cout);
+        std::cout << x.delta.get_used_symbols() << "\n";
+    }
+}
