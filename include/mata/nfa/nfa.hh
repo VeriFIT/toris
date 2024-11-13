@@ -173,7 +173,7 @@ public:
     BoolVector get_useful_states() const;
 
     /**
-     * @brief Structure for storing callback functions (event handlers) utilizing 
+     * @brief Structure for storing callback functions (event handlers) utilizing
      * Tarjan's SCC discover algorithm.
      */
     struct TarjanDiscoverCallback {
@@ -189,7 +189,7 @@ public:
 
     /**
      * @brief Tarjan's SCC discover algorihm.
-     * 
+     *
      * @param callback Callbacks class to instantiate callbacks for the Tarjan's algorithm.
      */
     void tarjan_scc_discover(const TarjanDiscoverCallback& callback) const;
@@ -218,9 +218,9 @@ public:
 
     /**
      * @brief Get some shortest accepting run from state @p q
-     * 
+     *
      * Assumes that @p q is a state of this automaton and that there is some accepting run from @p q
-     * 
+     *
      * @param distances_to_final Vector of the lengths of the shortest runs from states (can be computed using distances_to_final())
      */
     Run get_shortest_accepting_run_from_state(State q, const std::vector<State>& distances_to_final) const;
@@ -302,8 +302,8 @@ public:
     StateSet post(const StateSet& states, const Symbol& symbol) const;
 
     /**
-     * Check whether the language of NFA is empty. 
-     * Currently calls is_lang_empty_scc if cex is null 
+     * Check whether the language of NFA is empty.
+     * Currently calls is_lang_empty_scc if cex is null
      * @param[out] cex Counter-example path for a case the language is not empty.
      * @return True if the language is empty, false otherwise.
      */
@@ -311,7 +311,7 @@ public:
 
     /**
      * @brief Check if the language is empty using Tarjan's SCC discover algorithm.
-     * 
+     *
      * @return Language empty <-> True
      */
     bool is_lang_empty_scc() const;
@@ -334,17 +334,17 @@ public:
 
     /**
      * @brief Is the automaton graph acyclic? Used for checking language finiteness.
-     * 
+     *
      * @return true <-> Automaton graph is acyclic.
      */
     bool is_acyclic() const;
 
     /**
      * @brief Is the automaton flat?
-     * 
-     * Flat automaton is an NFA whose every SCC is a simple loop. Basically each state in an 
+     *
+     * Flat automaton is an NFA whose every SCC is a simple loop. Basically each state in an
      * SCC has at most one successor within this SCC.
-     * 
+     *
      * @return true <-> Automaton graph is flat.
      */
     bool is_flat() const;
@@ -374,7 +374,7 @@ public:
 
     /**
      * @brief Get the set of all words in the language of the automaton whose length is <= @p max_length
-     * 
+     *
      * If you have an automaton with finite language (can be checked using @ref is_acyclic),
      * you can get all words by calling
      *      get_words(aut.num_of_states())
@@ -741,6 +741,15 @@ Nfa somewhat_simple_revert(const Nfa& aut);
 
 // Removing epsilon transitions
 Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
+
+/**
+ * @brief Decodes automaton from UTF-8 encoding.
+ *
+ * @param[in] aut Automaton to decode.
+ * @return Decoded automaton.
+ */
+
+Nfa decode_utf8(const Nfa& aut);
 
 /** Encodes a vector of strings (each corresponding to one symbol) into a
  *  @c Word instance

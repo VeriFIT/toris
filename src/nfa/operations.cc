@@ -31,7 +31,7 @@ namespace {
             unused_symbol = *it + 1;
             ++it;
             const auto used_symbols_end = used_symbols.end();
-            while (it != used_symbols_end && unused_symbol == *it) {    
+            while (it != used_symbols_end && unused_symbol == *it) {
                 unused_symbol = *it + 1;
                 ++it;
             }
@@ -39,7 +39,7 @@ namespace {
                 throw std::runtime_error("all symbols are used, we cannot compute simulation reduction");
             }
         }
-        
+
         const size_t state_num{ aut.num_of_states() };
         Simlib::ExplicitLTS lts_for_simulation(state_num);
 
@@ -266,7 +266,7 @@ namespace {
             for (State q: S) {
                 mata::utils::push_back(synchronized_iterator, aut.delta[q]);
             }
-  
+
             while (synchronized_iterator.advance()) {
                 bool add = false;               // check whether to add transitions
 
@@ -1169,7 +1169,7 @@ std::set<mata::Word> mata::nfa::Nfa::get_words(unsigned max_length) const {
             result.insert(mata::Word());
         }
     }
-    
+
     // will be used during the loop
     std::vector<std::pair<State, mata::Word>> new_worklist;
 
@@ -1467,4 +1467,119 @@ std::optional<mata::Word> mata::nfa::get_word_from_lang_difference(const Nfa & n
             (void)macrostate;
             return nfa_lang_difference.final.empty();
         }).get_word();
+}
+
+Nfa mata::nfa::decode_utf8(const Nfa &aut) {
+    // Decodes UTF-8 like transitions starting from the given state.
+    auto decode_utf8_trans = [&](const State state, const uint8_t first_byte) -> std::vector<SymbolPost> {
+        // Determine the length of the UTF-8 prefix
+        const size_t prefix_len = (first_byte >> 5 == 0b110) ? 3 :
+                                  (first_byte >> 4 == 0b1110) ? 4 :
+                                  (first_byte >> 3 == 0b11110) ? 5 : 0;
+        assert(prefix_len > 0);
+        uint8_t first_byte_data = first_byte & (0xff >> (prefix_len));
+        size_t max_depth = prefix_len - 2;
+
+        std::vector<SymbolPost> result;
+        std::stack<std::tuple<State, Symbol, uint8_t>> worklist;
+        worklist.push({state, first_byte_data, 0});
+        // Inner limited depth DFS - combines multiple transitions into a single UTF-8 symbol
+        while (!worklist.empty()) {
+            std::tuple<State, Symbol, uint8_t> elem = worklist.top();
+            worklist.pop();
+            State src = std::get<0>(elem);
+            Symbol symbol = std::get<1>(elem);
+            uint8_t depth = std::get<2>(elem);
+            assert(depth < max_depth);
+            depth++;
+
+            for (const SymbolPost &symbol_post : aut.delta[src]) {
+                const uint8_t symbol_prefix = static_cast<uint8_t>(symbol_post.symbol & 0xc0);
+                assert(symbol_prefix == 0x80);
+                const uint8_t symbol_data = static_cast<uint8_t>(symbol_post.symbol & 0x7f);
+                symbol = (symbol << 6) | symbol_data;
+
+                if (depth == max_depth) {
+                    // This is the last byte of the UTF-8 symbol.
+                    result.push_back(SymbolPost{symbol, symbol_post.targets});
+                } else {
+                    // This is an intermediate byte of the UTF-8 symbol. Continue the DFS.
+                    for (State target : symbol_post.targets) {
+                        worklist.push({target, symbol, depth});
+                    }
+                }
+            }
+        }
+
+        return result;
+    };
+
+    const size_t num_of_states{ aut.num_of_states() };
+    std::vector<State> renaming(aut.num_of_states(), 0);
+    Nfa result;
+    result.clear();
+    result.delta.allocate(num_of_states);
+    size_t result_num_of_states{ 0 };
+    mata::BoolVector used(num_of_states, false);
+
+    std::stack<State> worklist;
+    for (State state: aut.initial) {
+        worklist.push(state);
+        used[state] = true;
+    }
+
+    // Outer DFS - traverses the automaton transitions
+    while (!worklist.empty()) {
+        State src = worklist.top();
+        worklist.pop();
+        renaming[src] = result_num_of_states++;
+
+        StatePost &result_state_post = result.delta.mutable_state_post(src);
+        for (const SymbolPost &symbol_post: aut.delta[src]) {
+            Symbol symbol = symbol_post.symbol;
+            if (symbol & 0x80) {
+                // This is an UTF-8 symbol
+                const uint8_t first_byte = static_cast<uint8_t>(symbol);
+                for (const State target: symbol_post.targets) {
+                    for (const SymbolPost &symbol_post_decoded: decode_utf8_trans(target, first_byte)) {
+                        // Insert decoded transitions
+                        result_state_post.insert(std::move(symbol_post_decoded));
+                        // Add targets to the worklist
+                        for (State target_decoded: symbol_post_decoded.targets) {
+                            if (used[target_decoded]) {
+                                continue;
+                            }
+                            used[target_decoded] = true;
+                            worklist.push(target_decoded);
+                        }
+                    }
+                }
+            } else {
+                // This is standard ASCII symbol <0;127>
+                result_state_post.insert(SymbolPost{symbol, symbol_post.targets});
+                for (State target: symbol_post.targets) {
+                    if (used[target]) {
+                        continue;
+                    }
+                    used[target] = true;
+                    worklist.push(target);
+                }
+            }
+        }
+    }
+
+    // Defragment delta and rename states
+    result.delta.defragment(used, renaming);
+    for (const State q: aut.initial) {
+        if (used[q]) {
+            result.initial.insert(renaming[q]);
+        }
+    }
+    for (const State q: aut.final) {
+        if (used[q]) {
+            result.final.insert(renaming[q]);
+        }
+    }
+
+    return result;
 }
