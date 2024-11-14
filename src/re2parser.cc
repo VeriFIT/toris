@@ -48,12 +48,12 @@ namespace {
          * @param regex_string Regex to be parsed as a string
          * @return Parsed regex as RE2 Regexp*
          */
-        re2::Regexp* parse_regex_string(const std::string& regex_string) const {
+        re2::Regexp* parse_regex_string(const std::string& regex_string, const re2::Regexp::ParseFlags encoding = re2::Regexp::Latin1) const {
             re2::RegexpStatus status;
 
             auto parsed_regex = re2::Regexp::Parse(
                     regex_string,
-                    static_cast<re2::Regexp::ParseFlags>(options.ParseFlags()),
+                    static_cast<re2::Regexp::ParseFlags>(options.ParseFlags() | encoding),
                     &status);
             if (parsed_regex == nullptr) {
                 if (options.log_errors()) {
@@ -497,7 +497,7 @@ namespace {
  * @param use_reduce if set to true the result is trimmed and reduced using simulation reduction
  * @return Nfa corresponding to pattern
  */
-void mata::parser::create_nfa(nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, mata::Symbol epsilon_value, bool use_reduce) {
+void mata::parser::create_nfa(nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, mata::Symbol epsilon_value, bool use_reduce, const unsigned encoding) {
     if (nfa == nullptr) {
         throw std::runtime_error("create_nfa: nfa should not be NULL");
     }

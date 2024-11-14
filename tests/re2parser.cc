@@ -1315,3 +1315,20 @@ TEST_CASE("mata::Parser bug epsilon")
         CHECK(x.is_in_lang(Run{Word{'a', 'a', 'a', 'a'}, {}}));
     }
 } // }}}
+
+TEST_CASE("mata::Parser Latin1 encoding")
+{ // {{{
+    SECTION("below 0x80")
+    {
+        Nfa x;
+        mata::parser::create_nfa(&x, "\\x{01}\\x{10}\\x{20}\\x{30}\\x{40}\\x{50}\\x{60}\\x{70}\\x{7f}");
+        CHECK(x.is_in_lang(Run{Word{0x01, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x7f}, {}}));
+    }
+
+    SECTION("above 0x80")
+    {
+        Nfa x;
+        mata::parser::create_nfa(&x, "\\x{80}\\x{90}\\x{a0}\\x{b0}\\x{c0}\\x{d0}\\x{e0}\\x{f0}\\x{ff}");
+        CHECK(x.is_in_lang(Run{Word{0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0, 0xff}, {}}));
+    }
+} // }}}

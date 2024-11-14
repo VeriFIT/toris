@@ -1515,11 +1515,7 @@ Nfa mata::nfa::decode_utf8(const Nfa &aut) {
     };
 
     const size_t num_of_states{ aut.num_of_states() };
-    std::vector<State> renaming(aut.num_of_states(), 0);
-    Nfa result;
-    result.clear();
-    result.delta.allocate(num_of_states);
-    size_t result_num_of_states{ 0 };
+    Nfa result{ num_of_states, StateSet{aut.initial}, StateSet{aut.final} };
     mata::BoolVector used(num_of_states, false);
 
     std::stack<State> worklist;
@@ -1532,13 +1528,11 @@ Nfa mata::nfa::decode_utf8(const Nfa &aut) {
     while (!worklist.empty()) {
         State src = worklist.top();
         worklist.pop();
-        renaming[src] = result_num_of_states++;
-
         StatePost &result_state_post = result.delta.mutable_state_post(src);
         for (const SymbolPost &symbol_post: aut.delta[src]) {
             Symbol symbol = symbol_post.symbol;
             if (symbol & 0x80) {
-                // This is an UTF-8 symbol
+                // It is an UTF-8 symbol
                 const uint8_t first_byte = static_cast<uint8_t>(symbol);
                 for (const State target: symbol_post.targets) {
                     for (const SymbolPost &symbol_post_decoded: decode_utf8_trans(target, first_byte)) {
@@ -1555,7 +1549,7 @@ Nfa mata::nfa::decode_utf8(const Nfa &aut) {
                     }
                 }
             } else {
-                // This is standard ASCII symbol <0;127>
+                // It is standard ASCII symbol <0;127>
                 result_state_post.insert(SymbolPost{symbol, symbol_post.targets});
                 for (State target: symbol_post.targets) {
                     if (used[target]) {
@@ -1565,19 +1559,6 @@ Nfa mata::nfa::decode_utf8(const Nfa &aut) {
                     worklist.push(target);
                 }
             }
-        }
-    }
-
-    // Defragment delta and rename states
-    result.delta.defragment(used, renaming);
-    for (const State q: aut.initial) {
-        if (used[q]) {
-            result.initial.insert(renaming[q]);
-        }
-    }
-    for (const State q: aut.final) {
-        if (used[q]) {
-            result.final.insert(renaming[q]);
         }
     }
 

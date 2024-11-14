@@ -743,7 +743,7 @@ Nfa somewhat_simple_revert(const Nfa& aut);
 Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
 
 /**
- * @brief Decodes automaton from UTF-8 encoding.
+ * @brief Decodes automaton from UTF-8 encoding. Method removes unreachable states from delta.
  *
  * @param[in] aut Automaton to decode.
  * @return Decoded automaton.
