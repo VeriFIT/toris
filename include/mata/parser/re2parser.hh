@@ -7,7 +7,14 @@
 #include <string>
 
 #include "mata/nfa/nfa.hh"
-#include "re2/regexp.h"
+
+
+// Encoding for the regular expression
+// FIXME: Use enum class re2::Regexp::ParseFlags from re2/regexp.h instead. It is not possible to include it here. Need to fix cmake.
+enum Encoding {
+    UTF8 = 0,
+    Latin1 = 1<<5
+};
 
 
 /**
@@ -17,7 +24,7 @@
  */
 namespace mata::parser {
     void create_nfa(nfa::Nfa* nfa, const std::string &pattern, bool use_epsilon = false, mata::Symbol epsilon_value = 306,
-                    bool use_reduce = true, const unsigned encoding = 32);
+                    bool use_reduce = true, const Encoding encoding = Encoding::Latin1);
 }
 
 #endif // MATA_RE2PARSER_HH

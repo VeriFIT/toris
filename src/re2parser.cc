@@ -48,7 +48,7 @@ namespace {
          * @param regex_string Regex to be parsed as a string
          * @return Parsed regex as RE2 Regexp*
          */
-        re2::Regexp* parse_regex_string(const std::string& regex_string, const re2::Regexp::ParseFlags encoding = re2::Regexp::Latin1) const {
+        re2::Regexp* parse_regex_string(const std::string& regex_string, const Encoding encoding = Encoding::Latin1) const {
             re2::RegexpStatus status;
 
             auto parsed_regex = re2::Regexp::Parse(
@@ -497,13 +497,13 @@ namespace {
  * @param use_reduce if set to true the result is trimmed and reduced using simulation reduction
  * @return Nfa corresponding to pattern
  */
-void mata::parser::create_nfa(nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, mata::Symbol epsilon_value, bool use_reduce, const unsigned encoding) {
+void mata::parser::create_nfa(nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, mata::Symbol epsilon_value, bool use_reduce, const Encoding encoding) {
     if (nfa == nullptr) {
         throw std::runtime_error("create_nfa: nfa should not be NULL");
     }
 
     RegexParser regexParser{};
-    auto parsed_regex = regexParser.parse_regex_string(pattern);
+    auto parsed_regex = regexParser.parse_regex_string(pattern, encoding);
     auto program = parsed_regex->CompileToProg(regexParser.options.max_mem() * 2 / 3);
     regexParser.convert_pro_to_nfa(nfa, program, true, epsilon_value);
     delete program;
