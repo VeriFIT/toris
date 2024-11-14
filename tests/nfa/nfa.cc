@@ -4192,3 +4192,185 @@ TEST_CASE("mata::nfa::Nfa::get_word()") {
         CHECK(aut.get_word() == Word{ 'b' });
     }
 }
+
+TEST_CASE("mata::nfa::Nfa::decode_utf8") {
+    SECTION("Empty") {
+        Nfa aut;
+        CHECK(are_equivalent(aut, aut.decode_utf8()));
+    }
+
+    SECTION("Empty language") {
+        Nfa aut(1, {0}, {0});
+        CHECK(are_equivalent(aut, aut.decode_utf8()));
+    }
+
+    SECTION("between 0x00 and 0x7F") {
+        Nfa aut;
+        aut.initial.insert(0);
+        aut.delta.add(0, 0x01, 1);
+        aut.delta.add(1, 0x10, 2);
+        aut.delta.add(2, 0x20, 3);
+        aut.delta.add(3, 0x30, 4);
+        aut.delta.add(4, 0x40, 5);
+        aut.delta.add(5, 0x50, 6);
+        aut.delta.add(6, 0x60, 7);
+        aut.delta.add(7, 0x70, 8);
+        aut.delta.add(8, 0x7f, 9);
+        aut.final.insert(9);
+
+        Nfa result;
+        result.initial.insert(0);
+        result.delta.add(0, 0x01, 1);
+        result.delta.add(1, 0x10, 2);
+        result.delta.add(2, 0x20, 3);
+        result.delta.add(3, 0x30, 4);
+        result.delta.add(4, 0x40, 5);
+        result.delta.add(5, 0x50, 6);
+        result.delta.add(6, 0x60, 7);
+        result.delta.add(7, 0x70, 8);
+        result.delta.add(8, 0x7f, 9);
+        result.final.insert(9);
+        CHECK(are_equivalent(result, aut.decode_utf8()));
+    }
+
+    SECTION("between 0x80 and 0x7ff") {
+        Nfa aut;
+        aut.initial.insert(0);
+        aut.delta.add(0, 0xc2, 1);
+        aut.delta.add(1, 0x80, 2);
+        aut.delta.add(2, 0xc2, 3);
+        aut.delta.add(3, 0x90, 4);
+        aut.delta.add(4, 0xc2, 5);
+        aut.delta.add(5, 0xa0, 6);
+        aut.delta.add(6, 0xc2, 7);
+        aut.delta.add(7, 0xb0, 8);
+        aut.delta.add(8, 0xc3, 9);
+        aut.delta.add(9, 0x80, 10);
+        aut.delta.add(10, 0xc3, 11);
+        aut.delta.add(11, 0x90, 12);
+        aut.delta.add(12, 0xd8, 13);
+        aut.delta.add(13, 0x80, 14);
+        aut.delta.add(14, 0xdc, 15);
+        aut.delta.add(15, 0x80, 16);
+        aut.delta.add(16, 0xdf, 17);
+        aut.delta.add(17, 0xbf, 18);
+        aut.final.insert(18);
+
+        Nfa result;
+        result.initial.insert(0);
+        result.delta.add(0, 0x80, 1);
+        result.delta.add(1, 0x90, 2);
+        result.delta.add(2, 0xa0, 3);
+        result.delta.add(3, 0xb0, 4);
+        result.delta.add(4, 0xc0, 5);
+        result.delta.add(5, 0xd0, 6);
+        result.delta.add(6, 0x600, 7);
+        result.delta.add(7, 0x700, 8);
+        result.delta.add(8, 0x7ff, 9);
+        result.final.insert(9);
+        CHECK(are_equivalent(result, aut.decode_utf8()));
+    }
+
+    SECTION("between 0x800 and 0x7FFF") {
+        Nfa aut;
+        aut.initial.insert(0);
+        aut.delta.add(0, 0xe0, 1);
+        aut.delta.add(1, 0xa0, 2);
+        aut.delta.add(2, 0x80, 3);
+        aut.delta.add(3, 0xe0, 4);
+        aut.delta.add(4, 0xa4, 5);
+        aut.delta.add(5, 0x80, 6);
+        aut.delta.add(6, 0xe0, 7);
+        aut.delta.add(7, 0xa8, 8);
+        aut.delta.add(8, 0x80, 9);
+        aut.delta.add(9, 0xe0, 10);
+        aut.delta.add(10, 0xac, 11);
+        aut.delta.add(11, 0x80, 12);
+        aut.delta.add(12, 0xe0, 13);
+        aut.delta.add(13, 0xb0, 14);
+        aut.delta.add(14, 0x80, 15);
+        aut.delta.add(15, 0xe0, 16);
+        aut.delta.add(16, 0xb4, 17);
+        aut.delta.add(17, 0x80, 18);
+        aut.delta.add(18, 0xe6, 19);
+        aut.delta.add(19, 0x80, 20);
+        aut.delta.add(20, 0x80, 21);
+        aut.delta.add(21, 0xe7, 22);
+        aut.delta.add(22, 0x80, 23);
+        aut.delta.add(23, 0x80, 24);
+        aut.delta.add(24, 0xe7, 25);
+        aut.delta.add(25, 0xbf, 26);
+        aut.delta.add(26, 0xbf, 27);
+        aut.final.insert(27);
+
+        Nfa result;
+        result.initial.insert(0);
+        result.delta.add(0, 0x800, 1);
+        result.delta.add(1, 0x900, 2);
+        result.delta.add(2, 0xa00, 3);
+        result.delta.add(3, 0xb00, 4);
+        result.delta.add(4, 0xc00, 5);
+        result.delta.add(5, 0xd00, 6);
+        result.delta.add(6, 0x6000, 7);
+        result.delta.add(7, 0x7000, 8);
+        result.delta.add(8, 0x7fff, 9);
+        result.final.insert(9);
+        CHECK(are_equivalent(result, aut.decode_utf8()));
+    }
+
+    SECTION("between 0x100000 and 0x10FFFF") {
+        Nfa aut;
+        aut.initial.insert(0);
+        aut.delta.add(0, 0xf0, 1);
+        aut.delta.add(1, 0x90, 2);
+        aut.delta.add(2, 0x80, 3);
+        aut.delta.add(3, 0x80, 4);
+        aut.delta.add(4, 0xf0, 5);
+        aut.delta.add(5, 0xa0, 6);
+        aut.delta.add(6, 0x80, 7);
+        aut.delta.add(7, 0x80, 8);
+        aut.delta.add(8, 0xf0, 9);
+        aut.delta.add(9, 0xb0, 10);
+        aut.delta.add(10, 0x80, 11);
+        aut.delta.add(11, 0x80, 12);
+        aut.delta.add(12, 0xf1, 13);
+        aut.delta.add(13, 0x80, 14);
+        aut.delta.add(14, 0x80, 15);
+        aut.delta.add(15, 0x80, 16);
+        aut.delta.add(16, 0xf1, 17);
+        aut.delta.add(17, 0x90, 18);
+        aut.delta.add(18, 0x80, 19);
+        aut.delta.add(19, 0x80, 20);
+        aut.delta.add(20, 0xf1, 21);
+        aut.delta.add(21, 0xa0, 22);
+        aut.delta.add(22, 0x80, 23);
+        aut.delta.add(23, 0x80, 24);
+        aut.delta.add(24, 0xf1, 25);
+        aut.delta.add(25, 0xb0, 26);
+        aut.delta.add(26, 0x80, 27);
+        aut.delta.add(27, 0x80, 28);
+        aut.delta.add(28, 0xf2, 29);
+        aut.delta.add(29, 0x80, 30);
+        aut.delta.add(30, 0x80, 31);
+        aut.delta.add(31, 0x80, 32);
+        aut.delta.add(32, 0xf4, 33);
+        aut.delta.add(33, 0x8f, 34);
+        aut.delta.add(34, 0xbf, 35);
+        aut.delta.add(35, 0xbf, 36);
+        aut.final.insert(36);
+
+        Nfa result;
+        result.initial.insert(0);
+        result.delta.add(0, 0x100000, 1);
+        result.delta.add(1, 0x200000, 2);
+        result.delta.add(2, 0x300000, 3);
+        result.delta.add(3, 0x400000, 4);
+        result.delta.add(4, 0x500000, 5);
+        result.delta.add(5, 0x600000, 6);
+        result.delta.add(6, 0x700000, 7);
+        result.delta.add(7, 0x800000, 8);
+        result.delta.add(8, 0x10ffff, 9);
+        result.final.insert(9);
+        CHECK(are_equivalent(result, aut.decode_utf8()));
+    }
+}

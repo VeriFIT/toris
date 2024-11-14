@@ -207,6 +207,14 @@ public:
     Nfa& trim(StateRenaming* state_renaming = nullptr);
 
     /**
+     * @brief Decodes automaton from UTF-8 encoding. Method removes unreachable states from delta.
+     *
+     * @return Decoded automaton.
+     */
+
+    Nfa decode_utf8() const;
+
+    /**
      * @brief Returns vector ret where ret[q] is the length of the shortest path from any initial state to q
      */
     std::vector<State> distances_from_initial() const;
@@ -741,15 +749,6 @@ Nfa somewhat_simple_revert(const Nfa& aut);
 
 // Removing epsilon transitions
 Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
-
-/**
- * @brief Decodes automaton from UTF-8 encoding. Method removes unreachable states from delta.
- *
- * @param[in] aut Automaton to decode.
- * @return Decoded automaton.
- */
-
-Nfa decode_utf8(const Nfa& aut);
 
 /** Encodes a vector of strings (each corresponding to one symbol) into a
  *  @c Word instance

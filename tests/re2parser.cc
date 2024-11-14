@@ -1410,7 +1410,7 @@ TEST_CASE("mata::Parser UTF-8 encoding")
         CHECK(are_equivalent(x, y));
     }
 
-    SECTION("between 0x800 and 0xFFFF")
+    SECTION("between 0x800 and 0x7FFF")
     {
         Nfa x;
         mata::parser::create_nfa(&x, "\\x{800}\\x{900}\\x{a00}\\x{b00}\\x{c00}\\x{d00}\\x{6000}\\x{7000}\\x{7fff}", false, 306, true, Encoding::UTF8);
