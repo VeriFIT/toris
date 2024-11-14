@@ -204,3 +204,52 @@ size_t mata::OnTheFlyAlphabet::erase(const std::string& symbol_name) {
     }
     return 0;
 }
+
+mata::Word mata::encode_word_utf8(const mata::Word& word) {
+    mata::Word utf8_encoded_word;
+    for (const Symbol symbol: word) {
+        if (symbol < 0x80) {
+            utf8_encoded_word.push_back(symbol);
+        } else if (symbol < 0x800) {
+            utf8_encoded_word.push_back(0xC0 | (symbol >> 6));
+            utf8_encoded_word.push_back(0x80 | (symbol & 0x3F));
+        } else if (symbol < 0x10000) {
+            utf8_encoded_word.push_back(0xE0 | (symbol >> 12));
+            utf8_encoded_word.push_back(0x80 | ((symbol >> 6) & 0x3F));
+            utf8_encoded_word.push_back(0x80 | (symbol & 0x3F));
+        } else if (symbol < 0x110000) {
+            utf8_encoded_word.push_back(0xF0 | (symbol >> 18));
+            utf8_encoded_word.push_back(0x80 | ((symbol >> 12) & 0x3F));
+            utf8_encoded_word.push_back(0x80 | ((symbol >> 6) & 0x3F));
+            utf8_encoded_word.push_back(0x80 | (symbol & 0x3F));
+        } else {
+            throw std::runtime_error("Symbol " + std::to_string(symbol) + " is out of range for UTF-8 encoding.");
+        }
+    }
+    return utf8_encoded_word;
+}
+
+mata::Word mata::decode_word_utf8(const mata::Word& word) {
+    mata::Word decoded_word;
+    for (size_t i = 0; i < word.size(); i++) {
+        Symbol symbol = word[i];
+        if ((symbol & 0x80) == 0) {
+            decoded_word.push_back(symbol);
+        } else if ((symbol & 0xE0) == 0xC0) {
+            assert(i + 1 < word.size());
+            decoded_word.push_back(((symbol & 0x1F) << 6) | (word[i+1] & 0x3F));
+            i += 1;
+        } else if ((symbol & 0xF0) == 0xE0) {
+            assert(i + 2 < word.size());
+            decoded_word.push_back(((symbol & 0x0F) << 12) | ((word[i+1] & 0x3F) << 6) | (word[i+2] & 0x3F));
+            i += 2;
+        } else if ((symbol & 0xF8) == 0xF0) {
+            assert(i + 3 < word.size());
+            decoded_word.push_back(((symbol & 0x07) << 18) | ((word[i+1] & 0x3F) << 12) | ((word[i+2] & 0x3F) << 6) | (word[i+3] & 0x3F));
+            i += 3;
+        } else {
+            throw std::runtime_error("Invalid UTF-8 encoding.");
+        }
+    }
+    return decoded_word;
+}

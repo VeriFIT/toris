@@ -1323,6 +1323,19 @@ TEST_CASE("mata::Parser Latin1 encoding")
         Nfa x;
         mata::parser::create_nfa(&x, "\\x{01}\\x{10}\\x{20}\\x{30}\\x{40}\\x{50}\\x{60}\\x{70}\\x{7f}");
         CHECK(x.is_in_lang(Run{Word{0x01, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x7f}, {}}));
+        Nfa y;
+        y.initial.insert(0);
+        y.delta.add(0, 0x01, 1);
+        y.delta.add(1, 0x10, 2);
+        y.delta.add(2, 0x20, 3);
+        y.delta.add(3, 0x30, 4);
+        y.delta.add(4, 0x40, 5);
+        y.delta.add(5, 0x50, 6);
+        y.delta.add(6, 0x60, 7);
+        y.delta.add(7, 0x70, 8);
+        y.delta.add(8, 0x7f, 9);
+        y.final.insert(9);
+        CHECK(are_equivalent(x, y));
     }
 
     SECTION("above 0x80")
@@ -1330,5 +1343,176 @@ TEST_CASE("mata::Parser Latin1 encoding")
         Nfa x;
         mata::parser::create_nfa(&x, "\\x{80}\\x{90}\\x{a0}\\x{b0}\\x{c0}\\x{d0}\\x{e0}\\x{f0}\\x{ff}");
         CHECK(x.is_in_lang(Run{Word{0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0, 0xff}, {}}));
+        Nfa y;
+        y.initial.insert(0);
+        y.delta.add(0, 0x80, 1);
+        y.delta.add(1, 0x90, 2);
+        y.delta.add(2, 0xa0, 3);
+        y.delta.add(3, 0xb0, 4);
+        y.delta.add(4, 0xc0, 5);
+        y.delta.add(5, 0xd0, 6);
+        y.delta.add(6, 0xe0, 7);
+        y.delta.add(7, 0xf0, 8);
+        y.delta.add(8, 0xff, 9);
+        y.final.insert(9);
+        CHECK(are_equivalent(x, y));
     }
+} // }}}
+
+TEST_CASE("mata::Parser UTF-8 encoding")
+{ // {{{
+    SECTION("below 0x80")
+    {
+        Nfa x;
+        mata::parser::create_nfa(&x, "\\x{01}\\x{10}\\x{20}\\x{30}\\x{40}\\x{50}\\x{60}\\x{70}\\x{7f}", false, 306, true, Encoding::UTF8);
+        CHECK(x.is_in_lang(Run{Word{0x01, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x7f}, {}}));
+        Nfa y;
+        y.initial.insert(0);
+        y.delta.add(0, 0x01, 1);
+        y.delta.add(1, 0x10, 2);
+        y.delta.add(2, 0x20, 3);
+        y.delta.add(3, 0x30, 4);
+        y.delta.add(4, 0x40, 5);
+        y.delta.add(5, 0x50, 6);
+        y.delta.add(6, 0x60, 7);
+        y.delta.add(7, 0x70, 8);
+        y.delta.add(8, 0x7f, 9);
+        y.final.insert(9);
+        CHECK(are_equivalent(x, y));
+    }
+
+    SECTION("between 0x80 and 0x800")
+    {
+        Nfa x;
+        mata::parser::create_nfa(&x, "\\x{80}\\x{90}\\x{a0}\\x{b0}\\x{c0}\\x{d0}\\x{600}\\x{700}\\x{7ff}", false, 306, true, Encoding::UTF8);
+        CHECK(x.is_in_lang(Run{mata::encode_word_utf8(Word{0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0x600, 0x700, 0x7ff}), {}}));
+        Nfa y;
+        y.initial.insert(0);
+        y.delta.add(0, 0xc2, 1);
+        y.delta.add(1, 0x80, 2);
+        y.delta.add(2, 0xc2, 3);
+        y.delta.add(3, 0x90, 4);
+        y.delta.add(4, 0xc2, 5);
+        y.delta.add(5, 0xa0, 6);
+        y.delta.add(6, 0xc2, 7);
+        y.delta.add(7, 0xb0, 8);
+        y.delta.add(8, 0xc3, 9);
+        y.delta.add(9, 0x80, 10);
+        y.delta.add(10, 0xc3, 11);
+        y.delta.add(11, 0x90, 12);
+        y.delta.add(12, 0xd8, 13);
+        y.delta.add(13, 0x80, 14);
+        y.delta.add(14, 0xdc, 15);
+        y.delta.add(15, 0x80, 16);
+        y.delta.add(16, 0xdf, 17);
+        y.delta.add(17, 0xbf, 18);
+        y.final.insert(18);
+        CHECK(are_equivalent(x, y));
+    }
+
+    SECTION("between 0x800 and 0xFFFF")
+    {
+        Nfa x;
+        mata::parser::create_nfa(&x, "\\x{800}\\x{900}\\x{a00}\\x{b00}\\x{c00}\\x{d00}\\x{6000}\\x{7000}\\x{7fff}", false, 306, true, Encoding::UTF8);
+        CHECK(x.is_in_lang(Run{mata::encode_word_utf8(Word{0x800, 0x900, 0xa00, 0xb00, 0xc00, 0xd00, 0x6000, 0x7000, 0x7fff}), {}}));
+        Nfa y;
+        y.initial.insert(0);
+        y.delta.add(0, 0xe0, 1);
+        y.delta.add(1, 0xa0, 2);
+        y.delta.add(2, 0x80, 3);
+        y.delta.add(3, 0xe0, 4);
+        y.delta.add(4, 0xa4, 5);
+        y.delta.add(5, 0x80, 6);
+        y.delta.add(6, 0xe0, 7);
+        y.delta.add(7, 0xa8, 8);
+        y.delta.add(8, 0x80, 9);
+        y.delta.add(9, 0xe0, 10);
+        y.delta.add(10, 0xac, 11);
+        y.delta.add(11, 0x80, 12);
+        y.delta.add(12, 0xe0, 13);
+        y.delta.add(13, 0xb0, 14);
+        y.delta.add(14, 0x80, 15);
+        y.delta.add(15, 0xe0, 16);
+        y.delta.add(16, 0xb4, 17);
+        y.delta.add(17, 0x80, 18);
+        y.delta.add(18, 0xe6, 19);
+        y.delta.add(19, 0x80, 20);
+        y.delta.add(20, 0x80, 21);
+        y.delta.add(21, 0xe7, 22);
+        y.delta.add(22, 0x80, 23);
+        y.delta.add(23, 0x80, 24);
+        y.delta.add(24, 0xe7, 25);
+        y.delta.add(25, 0xbf, 26);
+        y.delta.add(26, 0xbf, 27);
+        y.final.insert(27);
+    }
+
+    SECTION("between 0x10000 and 0x10FFFF")
+    {
+        Nfa x;
+        mata::parser::create_nfa(&x, "\\x{10000}\\x{20000}\\x{30000}\\x{40000}\\x{50000}\\x{60000}\\x{70000}\\x{80000}\\x{10ffff}", false, 306, true, Encoding::UTF8);
+        CHECK(x.is_in_lang(Run{mata::encode_word_utf8(Word{0x10000, 0x20000, 0x30000, 0x40000, 0x50000, 0x60000, 0x70000, 0x80000, 0x10FFFF}), {}}));
+        Nfa y;
+        y.initial.insert(0);
+        y.delta.add(0, 0xf0, 1);
+        y.delta.add(1, 0x90, 2);
+        y.delta.add(2, 0x80, 3);
+        y.delta.add(3, 0x80, 4);
+        y.delta.add(4, 0xf0, 5);
+        y.delta.add(5, 0xa0, 6);
+        y.delta.add(6, 0x80, 7);
+        y.delta.add(7, 0x80, 8);
+        y.delta.add(8, 0xf0, 9);
+        y.delta.add(9, 0xb0, 10);
+        y.delta.add(10, 0x80, 11);
+        y.delta.add(11, 0x80, 12);
+        y.delta.add(12, 0xf1, 13);
+        y.delta.add(13, 0x80, 14);
+        y.delta.add(14, 0x80, 15);
+        y.delta.add(15, 0x80, 16);
+        y.delta.add(16, 0xf1, 17);
+        y.delta.add(17, 0x90, 18);
+        y.delta.add(18, 0x80, 19);
+        y.delta.add(19, 0x80, 20);
+        y.delta.add(20, 0xf1, 21);
+        y.delta.add(21, 0xa0, 22);
+        y.delta.add(22, 0x80, 23);
+        y.delta.add(23, 0x80, 24);
+        y.delta.add(24, 0xf1, 25);
+        y.delta.add(25, 0xb0, 26);
+        y.delta.add(26, 0x80, 27);
+        y.delta.add(27, 0x80, 28);
+        y.delta.add(28, 0xf2, 29);
+        y.delta.add(29, 0x80, 30);
+        y.delta.add(30, 0x80, 31);
+        y.delta.add(31, 0x80, 32);
+        y.delta.add(32, 0xf4, 33);
+        y.delta.add(33, 0x8f, 34);
+        y.delta.add(34, 0xbf, 35);
+        y.delta.add(35, 0xbf, 36);
+        y.final.insert(36);
+        CHECK(are_equivalent(x, y));
+    }
+
+    SECTION("mix")
+    {
+        Nfa x;
+        mata::parser::create_nfa(&x, "\\x{01}\\x{90}\\x{8ac}\\x{100cc}", false, 306, true, Encoding::UTF8);
+        CHECK(x.is_in_lang(Run{mata::encode_word_utf8(Word{0x01, 0x90, 0x8ac, 0x100cc}), {}}));
+        Nfa y;
+        y.initial.insert(0);
+        y.delta.add(0, 0x01, 1);
+        y.delta.add(1, 0xc2, 2);
+        y.delta.add(2, 0x90, 3);
+        y.delta.add(3, 0xe0, 4);
+        y.delta.add(4, 0xa2, 5);
+        y.delta.add(5, 0xac, 6);
+        y.delta.add(6, 0xf0, 7);
+        y.delta.add(7, 0x90, 8);
+        y.delta.add(8, 0x83, 9);
+        y.delta.add(9, 0x8c, 10);
+        y.final.insert(10);
+        CHECK(are_equivalent(x, y));
+    }
+
 } // }}}
