@@ -4318,7 +4318,7 @@ TEST_CASE("mata::nfa::Nfa::decode_utf8") {
         CHECK(are_equivalent(result, aut.decode_utf8()));
     }
 
-    SECTION("between 0x100000 and 0x10FFFF") {
+    SECTION("between 0x10000 and 0x10FFFF") {
         Nfa aut;
         aut.initial.insert(0);
         aut.delta.add(0, 0xf0, 1);
@@ -4361,16 +4361,41 @@ TEST_CASE("mata::nfa::Nfa::decode_utf8") {
 
         Nfa result;
         result.initial.insert(0);
-        result.delta.add(0, 0x100000, 1);
-        result.delta.add(1, 0x200000, 2);
-        result.delta.add(2, 0x300000, 3);
-        result.delta.add(3, 0x400000, 4);
-        result.delta.add(4, 0x500000, 5);
-        result.delta.add(5, 0x600000, 6);
-        result.delta.add(6, 0x700000, 7);
-        result.delta.add(7, 0x800000, 8);
+        result.delta.add(0, 0x10000, 1);
+        result.delta.add(1, 0x20000, 2);
+        result.delta.add(2, 0x30000, 3);
+        result.delta.add(3, 0x40000, 4);
+        result.delta.add(4, 0x50000, 5);
+        result.delta.add(5, 0x60000, 6);
+        result.delta.add(6, 0x70000, 7);
+        result.delta.add(7, 0x80000, 8);
         result.delta.add(8, 0x10ffff, 9);
         result.final.insert(9);
+        CHECK(are_equivalent(result, aut.decode_utf8()));
+    }
+
+    SECTION("mix") {
+        Nfa aut;
+        aut.initial.insert(0);
+        aut.delta.add(0, 0x01, 1);
+        aut.delta.add(1, 0xc2, 2);
+        aut.delta.add(2, 0x90, 3);
+        aut.delta.add(3, 0xe0, 4);
+        aut.delta.add(4, 0xa2, 5);
+        aut.delta.add(5, 0xac, 6);
+        aut.delta.add(6, 0xf0, 7);
+        aut.delta.add(7, 0x90, 8);
+        aut.delta.add(8, 0x83, 9);
+        aut.delta.add(9, 0x8c, 10);
+        aut.final.insert(10);
+
+        Nfa result;
+        result.initial.insert(0);
+        result.delta.add(0, 0x01, 1);
+        result.delta.add(1, 0x90, 2);
+        result.delta.add(2, 0x8ac, 3);
+        result.delta.add(3, 0x100cc, 4);
+        result.final.insert(4);
         CHECK(are_equivalent(result, aut.decode_utf8()));
     }
 }

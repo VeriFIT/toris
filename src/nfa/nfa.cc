@@ -650,109 +650,25 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& aut) {
 }
 
 Nfa Nfa::decode_utf8() const {
-    // // Decodes UTF-8 like transitions starting from the given state.
-    // auto decode_utf8_trans = [&](const State state, const uint8_t first_byte) -> std::vector<SymbolPost> {
-    //     // Determine the length of the UTF-8 prefix
-    //     const size_t prefix_len = (first_byte >> 5 == 0b110) ? 3 :
-    //                               (first_byte >> 4 == 0b1110) ? 4 :
-    //                               (first_byte >> 3 == 0b11110) ? 5 : 0;
-    //     assert(prefix_len > 0);
-    //     uint8_t first_byte_data = first_byte & (0xff >> (prefix_len));
-    //     size_t max_depth = prefix_len - 2;
-
-    //     std::vector<SymbolPost> result;
-    //     std::stack<std::tuple<State, Symbol, uint8_t>> worklist;
-    //     worklist.push({state, first_byte_data, 0});
-    //     // Inner limited depth DFS - combines multiple transitions into a single UTF-8 symbol
-    //     while (!worklist.empty()) {
-    //         std::tuple<State, Symbol, uint8_t> elem = worklist.top();
-    //         worklist.pop();
-    //         State src = std::get<0>(elem);
-    //         Symbol symbol = std::get<1>(elem);
-    //         uint8_t depth = std::get<2>(elem);
-    //         assert(depth < max_depth);
-    //         depth++;
-
-    //         for (const SymbolPost &symbol_post : this->delta[src]) {
-    //             const uint8_t symbol_prefix = static_cast<uint8_t>(symbol_post.symbol & 0xc0);
-    //             assert(symbol_prefix == 0x80);
-    //             const uint8_t symbol_data = static_cast<uint8_t>(symbol_post.symbol & 0x7f);
-    //             symbol = (symbol << 6) | symbol_data;
-
-    //             if (depth == max_depth) {
-    //                 // This is the last byte of the UTF-8 symbol.
-    //                 result.push_back(SymbolPost{symbol, symbol_post.targets});
-    //             } else {
-    //                 // This is an intermediate byte of the UTF-8 symbol. Continue the DFS.
-    //                 for (State target : symbol_post.targets) {
-    //                     worklist.push({target, symbol, depth});
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     return result;
-    // };
-
-    // const size_t num_of_states{ this->num_of_states() };
-    // Nfa result{ num_of_states, StateSet{this->initial}, StateSet{this->final} };
-    // mata::BoolVector used(num_of_states, false);
-
-    // std::stack<State> worklist;
-    // for (State state: this->initial) {
-    //     worklist.push(state);
-    //     used[state] = true;
-    // }
-
-    // // Outer DFS - traverses the automaton transitions
-    // while (!worklist.empty()) {
-    //     State src = worklist.top();
-    //     worklist.pop();
-    //     StatePost &result_state_post = result.delta.mutable_state_post(src);
-    //     for (const SymbolPost &symbol_post: this->delta[src]) {
-    //         Symbol symbol = symbol_post.symbol;
-    //         if (symbol & 0x80) {
-    //             // It is an UTF-8 symbol
-    //             const uint8_t first_byte = static_cast<uint8_t>(symbol);
-    //             for (const State target: symbol_post.targets) {
-    //                 for (const SymbolPost &symbol_post_decoded: decode_utf8_trans(target, first_byte)) {
-    //                     // Insert decoded transitions
-    //                     result_state_post.insert(std::move(symbol_post_decoded));
-    //                     // Add targets to the worklist
-    //                     for (State target_decoded: symbol_post_decoded.targets) {
-    //                         if (used[target_decoded]) {
-    //                             continue;
-    //                         }
-    //                         used[target_decoded] = true;
-    //                         worklist.push(target_decoded);
-    //                     }
-    //                 }
-    //             }
-    //         } else {
-    //             // It is standard ASCII symbol <0;127>
-    //             result_state_post.insert(SymbolPost{symbol, symbol_post.targets});
-    //             for (State target: symbol_post.targets) {
-    //                 if (used[target]) {
-    //                     continue;
-    //                 }
-    //                 used[target] = true;
-    //                 worklist.push(target);
-    //             }
-    //         }
-    //     }
-    // }
-
     Nfa result{ this->num_of_states(), StateSet{this->initial}, StateSet{this->final} };
     BoolVector used(this->num_of_states(), false);
     std::stack<State> worklist;
 
     auto push_state_set = [&](const StateSet& set) {
         for (State state: set) {
+            if (used[state]) {
+                continue;
+            }
             worklist.push(state);
             used[state] = true;
         }
     };
 
+    // UTF-8 Byte Patterns:
+    // U+0000   to U+007F  : 0xxxxxxx
+    // U+0080   to U+07FF  : 110xxxxx 10xxxxxx
+    // U+0800   to U+FFFF  : 1110xxxx 10xxxxxx 10xxxxxx
+    // U+010000 to U+10FFFF: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
     push_state_set(StateSet{this->initial});
     while (!worklist.empty()) {
         State q1 = worklist.top();

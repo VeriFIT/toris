@@ -1515,4 +1515,101 @@ TEST_CASE("mata::Parser UTF-8 encoding")
         CHECK(are_equivalent(x, y));
     }
 
+    SECTION("Regex range [x70-x90]") {
+        Nfa aut;
+        mata::parser::create_nfa(&aut, "[\\x{70}-\\x{90}]", false, 306, true, Encoding::UTF8);
+        aut = aut.decode_utf8();
+
+        Nfa result;
+        State initial_s = 0;
+        State final_s = 1;
+        result.initial.insert(initial_s);
+        result.final.insert(final_s);
+        for(Symbol c = 0x70; c <= 0x90; c++) {
+            result.delta.add(initial_s, c, final_s);
+        }
+        CHECK(are_equivalent(aut, result));
+    }
+
+    SECTION("Regex range [x790-x890]") {
+        Nfa aut;
+        mata::parser::create_nfa(&aut, "[\\x{700}-\\x{900}]", false, 306, true, Encoding::UTF8);
+        aut = aut.decode_utf8();
+
+        Nfa result;
+        State initial_s = 0;
+        State final_s = 1;
+        result.initial.insert(initial_s);
+        result.final.insert(final_s);
+        for(Symbol c = 0x700; c <= 0x900; c++) {
+            result.delta.add(initial_s, c, final_s);
+        }
+        CHECK(are_equivalent(aut, result));
+    }
+
+    SECTION("Regex range [xFF90-x10090]") {
+        Nfa aut;
+        mata::parser::create_nfa(&aut, "[\\x{FF90}-\\x{10090}]", false, 306, true, Encoding::UTF8);
+        aut = aut.decode_utf8();
+
+        Nfa result;
+        State initial_s = 0;
+        State final_s = 1;
+        result.initial.insert(initial_s);
+        result.final.insert(final_s);
+        for(Symbol c = 0xFF90; c <= 0x10090; c++) {
+            result.delta.add(initial_s, c, final_s);
+        }
+        CHECK(are_equivalent(aut, result));
+    }
+
+    SECTION("Regex range [x00-x900]") {
+        Nfa aut;
+        mata::parser::create_nfa(&aut, "[\\x{00}-\\x{900}]", false, 306, true, Encoding::UTF8);
+        aut = aut.decode_utf8();
+
+        Nfa result;
+        State initial_s = 0;
+        State final_s = 1;
+        result.initial.insert(initial_s);
+        result.final.insert(final_s);
+        for(Symbol c = 0; c <= 0x900; c++) {
+            result.delta.add(initial_s, c, final_s);
+        }
+        CHECK(are_equivalent(aut, result));
+    }
+
+    SECTION("Regex (\\x{60}*\\x{80})|(\\x{900}*\\x{600})") {
+        Nfa aut;
+        mata::parser::create_nfa(&aut, "(\\x{60}*\\x{80})|(\\x{900}*\\x{600})", false, 306, true, Encoding::UTF8);
+        aut = aut.decode_utf8();
+
+        Nfa result;
+        result.delta.add(0, 0x60, 0);
+        result.delta.add(0, 0x80, 1);
+        result.delta.add(2, 0x900, 2);
+        result.delta.add(2, 0x600, 3);
+        result.initial.insert(0);
+        result.initial.insert(2);
+        result.final.insert(1);
+        result.final.insert(3);
+        CHECK(are_equivalent(aut, result));
+    }
+
+    // SECTION("Regex .*") {
+    //     Nfa aut;
+    //     mata::parser::create_nfa(&aut, ".*", false, 306, true, Encoding::UTF8);
+    //     aut = aut.decode_utf8();
+
+    //     Nfa result;
+    //     State initial_s = 0;
+    //     State final_s = 1;
+    //     result.initial.insert(initial_s);
+    //     result.final.insert(final_s);
+    //     for(Symbol c = 0; c <= 0x10FFFF; c++) {
+    //         result.delta.add(initial_s, c, final_s);
+    //     }
+    //     CHECK(are_equivalent(aut, result));
+    // }
+
 } // }}}
