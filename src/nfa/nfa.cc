@@ -654,6 +654,7 @@ Nfa Nfa::decode_utf8() const {
     BoolVector used(this->num_of_states(), false);
     std::stack<State> worklist;
 
+    // Pushes a set of states to the worklist and marks them as used.
     auto push_state_set = [&](const StateSet& set) {
         for (State state: set) {
             if (used[state]) {
@@ -664,51 +665,86 @@ Nfa Nfa::decode_utf8() const {
         }
     };
 
+    // Adds a symbol_post to the state_post.
+    // If the transition sequence is deterministic, we can use emplace_back
+    // because symbols are discovered in ascending order. However, in cases
+    // of nondeterministic sequences, we must use insert to ensure proper ordering.
+    // For example, consider the sequences 0xC8 0x80 and 0xC8 0x88.
+    // Based solely on the first byte (0xC8), we cannot determine which sequence
+    // will result in the higher number.
+    auto add_to_state_post = [&](StatePost &state_post, const SymbolPost &symbol_post, const bool is_nondet) {
+        if (is_nondet) {
+            state_post.insert(std::move(symbol_post));
+        } else {
+            state_post.emplace_back(std::move(symbol_post));
+        }
+    };
+
     // UTF-8 Byte Patterns:
     // U+0000   to U+007F  : 0xxxxxxx
     // U+0080   to U+07FF  : 110xxxxx 10xxxxxx
     // U+0800   to U+FFFF  : 1110xxxx 10xxxxxx 10xxxxxx
     // U+010000 to U+10FFFF: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+    // NOTE: Due to the nature of RE2, the automaton language can contain unexpected (invalid)
+    //       UTF-8 sequences, such as 11000000 10000000 (U+0300). Because of that,
+    //       we need to check if the decoded symbol is within the valid range of Unicode code points.
     push_state_set(StateSet{this->initial});
     while (!worklist.empty()) {
         State q1 = worklist.top();
+        StatePost &q1_state_post = result.delta.mutable_state_post(q1);
         worklist.pop();
-
         // 1st Byte
         for (const SymbolPost &sp1: this->delta[q1]) {
             const Symbol s1 = sp1.symbol;
             if ((s1 & 0x80) == 0x00) {
-                result.delta.add(q1, s1, sp1.targets);
+                q1_state_post.emplace_back(SymbolPost{s1, sp1.targets});;
                 push_state_set(sp1.targets);
                 continue;
             }
             // 2nd Byte
+            const bool is_nondet1 = sp1.targets.size() > 1;
             for (const State q2: sp1.targets) {
                 for (const SymbolPost &sp2: this->delta[q2]) {
                     const Symbol s2 = sp2.symbol;
                     if ((s1 & 0xE0) == 0xC0) {
                         assert((s2 & 0xC0) == 0x80);
-                        result.delta.add(q1, ((s1 & 0x1F) << 6) | (s2 & 0x3F), sp2.targets);
+                        const Symbol symbol = ((s1 & 0x1F) << 6) | (s2 & 0x3F);
+                        if (symbol < 0x80) {
+                            continue;   // Invalid UTF-8 sequence
+                        }
+                        assert(symbol <= 0x7FF);
+                        add_to_state_post(q1_state_post, SymbolPost{symbol, sp2.targets}, is_nondet1);
                         push_state_set(sp2.targets);
                         continue;
                     }
                     // 3rd Byte
+                    const bool is_nondet2 = is_nondet1 || sp2.targets.size() > 1;
                     for (const State q3: sp2.targets) {
                         for (const SymbolPost &sp3: this->delta[q3]) {
                             const Symbol s3 = sp3.symbol;
                             if ((s1 & 0xF0) == 0xE0) {
                                 assert((s3 & 0xC0) == 0x80);
-                                result.delta.add(q1, ((s1 & 0x0F) << 12) | ((s2 & 0x3F) << 6) | (s3 & 0x3F), sp3.targets);
+                                const Symbol symbol = ((s1 & 0x0F) << 12) | ((s2 & 0x3F) << 6) | (s3 & 0x3F);
+                                if (symbol < 0x800) {
+                                    continue;   // Invalid UTF-8 sequence
+                                }
+                                assert(symbol <= 0xFFFF);
+                                add_to_state_post(q1_state_post, SymbolPost{symbol, sp3.targets}, is_nondet2);
                                 push_state_set(sp3.targets);
                                 continue;
                             }
                             // 4th Byte
+                            const bool is_nondet3 = is_nondet2 || sp3.targets.size() > 1;
                             for (const State q4: sp3.targets) {
                                 for (const SymbolPost &sp4: this->delta[q4]) {
                                     const Symbol s4 = sp4.symbol;
                                     assert((s1 & 0xF8) == 0xF0);
                                     assert((s4 & 0xC0) == 0x80);
-                                    result.delta.add(q1, ((s1 & 0x07) << 18) | ((s2 & 0x3F) << 12) | ((s3 & 0x3F) << 6) | (s4 & 0x3F), sp4.targets);
+                                    const Symbol symbol = ((s1 & 0x07) << 18) | ((s2 & 0x3F) << 12) | ((s3 & 0x3F) << 6) | (s4 & 0x3F);
+                                    if (symbol < 0x10000 || symbol > 0x10FFFF) {
+                                        continue;   // Invalid UTF-8 sequence
+                                    }
+                                    add_to_state_post(q1_state_post, SymbolPost{symbol, sp4.targets}, is_nondet3);
                                     push_state_set(sp4.targets);
                                 }
                             }

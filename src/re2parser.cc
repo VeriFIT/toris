@@ -46,6 +46,7 @@ namespace {
         /**
          * Creates parsed regex (ie. Regexp*) from string regex_string
          * @param regex_string Regex to be parsed as a string
+         * @param encoding Encoding of the regex, default is Latin1
          * @return Parsed regex as RE2 Regexp*
          */
         re2::Regexp* parse_regex_string(const std::string& regex_string, const Encoding encoding = Encoding::Latin1) const {
@@ -490,11 +491,12 @@ namespace {
 }
 
  /**
- * The main method, it creates NFA from regex
+ * The main method, it creates NFA from regex.
  * @param pattern regex as string
  * @param use_epsilon whether to create NFA with epsilon transitions or not
  * @param epsilon_value value, that will represent epsilon on transitions
  * @param use_reduce if set to true the result is trimmed and reduced using simulation reduction
+ * @param encoding encoding of the regex, default is Latin1
  * @return Nfa corresponding to pattern
  */
 void mata::parser::create_nfa(nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, mata::Symbol epsilon_value, bool use_reduce, const Encoding encoding) {

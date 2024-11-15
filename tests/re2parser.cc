@@ -1563,22 +1563,6 @@ TEST_CASE("mata::Parser UTF-8 encoding")
         CHECK(are_equivalent(aut, result));
     }
 
-    SECTION("Regex range [x00-x900]") {
-        Nfa aut;
-        mata::parser::create_nfa(&aut, "[\\x{00}-\\x{900}]", false, 306, true, Encoding::UTF8);
-        aut = aut.decode_utf8();
-
-        Nfa result;
-        State initial_s = 0;
-        State final_s = 1;
-        result.initial.insert(initial_s);
-        result.final.insert(final_s);
-        for(Symbol c = 0; c <= 0x900; c++) {
-            result.delta.add(initial_s, c, final_s);
-        }
-        CHECK(are_equivalent(aut, result));
-    }
-
     SECTION("Regex (\\x{60}*\\x{80})|(\\x{900}*\\x{600})") {
         Nfa aut;
         mata::parser::create_nfa(&aut, "(\\x{60}*\\x{80})|(\\x{900}*\\x{600})", false, 306, true, Encoding::UTF8);
@@ -1596,20 +1580,21 @@ TEST_CASE("mata::Parser UTF-8 encoding")
         CHECK(are_equivalent(aut, result));
     }
 
-    // SECTION("Regex .*") {
-    //     Nfa aut;
-    //     mata::parser::create_nfa(&aut, ".*", false, 306, true, Encoding::UTF8);
-    //     aut = aut.decode_utf8();
+    // A proper test, but takes about 2 seconds to run.
+    SECTION("Regex [\\x{00}-\\x{10FFFF}]") {
+        Nfa aut;
+        mata::parser::create_nfa(&aut, "[\\x{00}-\\x{10FFFF}]", false, 306, true, Encoding::UTF8);
+        aut = aut.decode_utf8();
 
-    //     Nfa result;
-    //     State initial_s = 0;
-    //     State final_s = 1;
-    //     result.initial.insert(initial_s);
-    //     result.final.insert(final_s);
-    //     for(Symbol c = 0; c <= 0x10FFFF; c++) {
-    //         result.delta.add(initial_s, c, final_s);
-    //     }
-    //     CHECK(are_equivalent(aut, result));
-    // }
+        // Random symbols
+        std::vector<Symbol> symbols = { 0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x7f, 0x80,
+        0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0, 0xff, 0x100, 0x110, 0x36f0, 0x57fc, 0x6177, 0x7498,
+        0x8f3f, 0x9fc8, 0x1101e, 0x14348, 0x14e34, 0x19581, 0x1c48e, 0x1f1cc, 0x1f91d, 0x222a6, 0x22e11,
+        0xe54f5, 0xe7934, 0xe93a4, 0xe998d, 0xebee8, 0xedb9e, 0xef98b, 0xf12af, 0xf51e2, 0xf557f, 0xf6b08,
+        0xfa7f0, 0xfacb2, 0xfd719, 0x106d12, 0x106d66, 0x109220, 0x10a608, 0x10c1f5, 0x10FFFF };
+        for(const Symbol c : symbols) {
+            CHECK(aut.is_in_lang(Run{Word{c}, {}}));
+        }
+    }
 
 } // }}}
