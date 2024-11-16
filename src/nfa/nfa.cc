@@ -5,6 +5,7 @@
 #include <list>
 #include <optional>
 #include <iterator>
+#include <fstream>
 
 // MATA headers
 #include "mata/utils/sparse-set.hh"
@@ -404,7 +405,7 @@ bool Nfa::is_flat() const {
     mata::nfa::Nfa::TarjanDiscoverCallback callback {};
     callback.scc_discover = [&](const std::vector<mata::nfa::State>& scc, const std::vector<mata::nfa::State>& tarjan_stack) -> bool {
         (void)tarjan_stack;
-        
+
         for(const mata::nfa::State& st : scc) {
             bool one_input_visited = false;
             for (const mata::nfa::SymbolPost& sp : this->delta[st]) {
@@ -459,6 +460,14 @@ void Nfa::print_to_dot(std::ostream &output) const {
     output << "}" << std::endl;
 }
 
+void Nfa::print_to_dot(const std::string& filename) const {
+    std::ofstream output(filename);
+    if (!output) {
+        throw std::ios_base::failure("Failed to open file: " + filename);
+    }
+    print_to_dot(output);
+}
+
 std::string Nfa::print_to_mata() const {
     std::stringstream output;
     print_to_mata(output);
@@ -490,6 +499,14 @@ void Nfa::print_to_mata(std::ostream &output) const {
     for (const Transition& trans: delta.transitions()) {
         output << "q" << trans.source << " " << trans.symbol << " q" << trans.target << std::endl;
     }
+}
+
+void Nfa::print_to_mata(const std::string& filename) const {
+    std::ofstream output(filename);
+    if (!output) {
+        throw std::ios_base::failure("Failed to open file: " + filename);
+    }
+    print_to_mata(output);
 }
 
 Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
