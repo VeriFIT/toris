@@ -202,7 +202,7 @@ namespace {
                                 symbols.push_back(symbol);
                                 // Foldcase causes RE2 to do a case-insensitive match, so transitions will be made for
                                 // both uppercase and lowercase symbols
-                                if (inst->foldcase()) {
+                                if (inst->foldcase() && symbol >= 'a' && symbol <= 'z') {
                                     symbols.push_back(symbol-ascii_shift_value);
                                 }
                             }
