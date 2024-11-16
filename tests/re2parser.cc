@@ -1273,6 +1273,24 @@ TEST_CASE("mata::Parser error")
         CHECK(!x.is_in_lang(Run{ Word{ 'a', 'a', 'a', 'a', 'a', 'a' }, {} }));
     }
 
+    SECTION("Regex from issue #456") {
+        Nfa x;
+        mata::parser::create_nfa(&x, "[\\x00-\\x5a\\x5c-\\x7F]");
+
+        Nfa y;
+        State initial_s = 0;
+        State final_s = 1;
+        y.initial.insert(initial_s);
+        y.final.insert(final_s);
+        for (Symbol c = 0; c <= 0x7F; c++) {
+            if (c == 0x5B) {
+                continue;
+            }
+            y.delta.add(initial_s, c, final_s);
+        }
+        CHECK(are_equivalent(x, y));
+    }
+
     SECTION("Another failing regex") {
         Nfa x;
         mata::parser::create_nfa(&x, "(cd(abcde)+)|(a(aaa)+|ccc+)");
