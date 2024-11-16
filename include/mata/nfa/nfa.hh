@@ -173,7 +173,7 @@ public:
     BoolVector get_useful_states() const;
 
     /**
-     * @brief Structure for storing callback functions (event handlers) utilizing 
+     * @brief Structure for storing callback functions (event handlers) utilizing
      * Tarjan's SCC discover algorithm.
      */
     struct TarjanDiscoverCallback {
@@ -189,7 +189,7 @@ public:
 
     /**
      * @brief Tarjan's SCC discover algorihm.
-     * 
+     *
      * @param callback Callbacks class to instantiate callbacks for the Tarjan's algorithm.
      */
     void tarjan_scc_discover(const TarjanDiscoverCallback& callback) const;
@@ -218,9 +218,9 @@ public:
 
     /**
      * @brief Get some shortest accepting run from state @p q
-     * 
+     *
      * Assumes that @p q is a state of this automaton and that there is some accepting run from @p q
-     * 
+     *
      * @param distances_to_final Vector of the lengths of the shortest runs from states (can be computed using distances_to_final())
      */
     Run get_shortest_accepting_run_from_state(State q, const std::vector<State>& distances_to_final) const;
@@ -281,6 +281,12 @@ public:
     void print_to_dot(std::ostream &output) const;
 
     /**
+     * @brief Prints the automaton to the file in DOT format
+     * @param filename Name of the file to print the automaton to
+     */
+    void print_to_dot(const std::string& filename) const;
+
+    /**
      * @brief Prints the automaton in mata format
      *
      * If you need to parse the automaton again, use IntAlphabet in construct()
@@ -289,6 +295,7 @@ public:
      * TODO handle alphabet of the automaton, currently we print the exact value of the symbols
      */
     std::string print_to_mata() const;
+
     /**
      * @brief Prints the automaton to the output stream in mata format
      *
@@ -298,12 +305,22 @@ public:
      */
     void print_to_mata(std::ostream &output) const;
 
+    /**
+     * @brief Prints the automaton to the file in mata format
+     *
+     * If you need to parse the automaton again, use IntAlphabet in construct()
+     *
+     * TODO handle alphabet of the automaton, currently we print the exact value of the symbols
+     * @param filename Name of the file to print the automaton to
+     */
+    void print_to_mata(const std::string& filename) const;
+
     // TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
     StateSet post(const StateSet& states, const Symbol& symbol) const;
 
     /**
-     * Check whether the language of NFA is empty. 
-     * Currently calls is_lang_empty_scc if cex is null 
+     * Check whether the language of NFA is empty.
+     * Currently calls is_lang_empty_scc if cex is null
      * @param[out] cex Counter-example path for a case the language is not empty.
      * @return True if the language is empty, false otherwise.
      */
@@ -311,7 +328,7 @@ public:
 
     /**
      * @brief Check if the language is empty using Tarjan's SCC discover algorithm.
-     * 
+     *
      * @return Language empty <-> True
      */
     bool is_lang_empty_scc() const;
@@ -334,17 +351,17 @@ public:
 
     /**
      * @brief Is the automaton graph acyclic? Used for checking language finiteness.
-     * 
+     *
      * @return true <-> Automaton graph is acyclic.
      */
     bool is_acyclic() const;
 
     /**
      * @brief Is the automaton flat?
-     * 
-     * Flat automaton is an NFA whose every SCC is a simple loop. Basically each state in an 
+     *
+     * Flat automaton is an NFA whose every SCC is a simple loop. Basically each state in an
      * SCC has at most one successor within this SCC.
-     * 
+     *
      * @return true <-> Automaton graph is flat.
      */
     bool is_flat() const;
@@ -374,7 +391,7 @@ public:
 
     /**
      * @brief Get the set of all words in the language of the automaton whose length is <= @p max_length
-     * 
+     *
      * If you have an automaton with finite language (can be checked using @ref is_acyclic),
      * you can get all words by calling
      *      get_words(aut.num_of_states())
