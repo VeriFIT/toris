@@ -1485,3 +1485,140 @@ TEST_CASE("mata::parser Parsing regexes with ^ and $") {
         CHECK(mata::nfa::are_equivalent(nfa, expected));
     }
 }
+
+TEST_CASE("Foldcase") {
+    SECTION("Regex [a-z]") {
+        Nfa nfa;
+        mata::parser::create_nfa(&nfa, "[a-z]");
+
+        Nfa result;
+        State initial_s = 0;
+        State final_s = 1;
+        result.initial.insert(initial_s);
+        result.final.insert(final_s);
+        for (Symbol c = 'a'; c <= 'z'; c++) {
+            result.delta.add(initial_s, c, final_s);
+        }
+        CHECK(are_equivalent(nfa, result));
+    }
+
+    SECTION("Regex [A-Z]") {
+        Nfa nfa;
+        mata::parser::create_nfa(&nfa, "[A-Z]");
+
+        Nfa result;
+        State initial_s = 0;
+        State final_s = 1;
+        result.initial.insert(initial_s);
+        result.final.insert(final_s);
+        for (Symbol c = 'A'; c <= 'Z'; c++) {
+            result.delta.add(initial_s, c, final_s);
+        }
+        CHECK(are_equivalent(nfa, result));
+    }
+
+    SECTION("Regex [A-Za-z]") {
+        Nfa nfa;
+        mata::parser::create_nfa(&nfa, "[A-Za-z]");
+
+        Nfa result;
+        State initial_s = 0;
+        State final_s = 1;
+        result.initial.insert(initial_s);
+        result.final.insert(final_s);
+        for (Symbol c = 'A'; c <= 'Z'; c++) {
+            result.delta.add(initial_s, c, final_s);
+        }
+        for (Symbol c = 'a'; c <= 'z'; c++) {
+            result.delta.add(initial_s, c, final_s);
+        }
+        CHECK(are_equivalent(nfa, result));
+    }
+
+    SECTION("Regex [a-zA-Z]") {
+        Nfa nfa;
+        mata::parser::create_nfa(&nfa, "[a-zA-Z]");
+
+        Nfa result;
+        State initial_s = 0;
+        State final_s = 1;
+        result.initial.insert(initial_s);
+        result.final.insert(final_s);
+        for (Symbol c = 'A'; c <= 'Z'; c++) {
+            result.delta.add(initial_s, c, final_s);
+        }
+        for (Symbol c = 'a'; c <= 'z'; c++) {
+            result.delta.add(initial_s, c, final_s);
+        }
+        CHECK(are_equivalent(nfa, result));
+    }
+
+    SECTION("Regex [M-Ya-x]") {
+        Nfa nfa;
+        mata::parser::create_nfa(&nfa, "[M-Ya-x]");
+
+        Nfa result;
+        State initial_s = 0;
+        State final_s = 1;
+        result.initial.insert(initial_s);
+        result.final.insert(final_s);
+        for (Symbol c = 'a'; c <= 'x'; c++) {
+            result.delta.add(initial_s, c, final_s);
+        }
+        for (Symbol c = 'M'; c <= 'Y'; c++) {
+            result.delta.add(initial_s, c, final_s);
+        }
+        CHECK(are_equivalent(nfa, result));
+    }
+
+    SECTION("Regex [\\x00-\\x5a\\x5c-\\x7F]") {
+        Nfa nfa;
+        mata::parser::create_nfa(&nfa, "[\\x00-\\x5a\\x5c-\\x7F]");
+
+        Nfa result;
+        State initial_s = 0;
+        State final_s = 1;
+        result.initial.insert(initial_s);
+        result.final.insert(final_s);
+        for (Symbol c = 0; c <= 0x7F; c++) {
+            if (c == 0x5B) {
+                continue;
+            }
+            result.delta.add(initial_s, c, final_s);
+        }
+        CHECK(are_equivalent(nfa, result));
+    }
+
+    SECTION("Regex [A-Ma-m]") {
+        Nfa nfa;
+        mata::parser::create_nfa(&nfa, "[A-Ma-m]");
+
+        Nfa result;
+        State initial_s = 0;
+        State final_s = 1;
+        result.initial.insert(initial_s);
+        result.final.insert(final_s);
+        for (Symbol c = 'A'; c <= 'M'; c++) {
+            result.delta.add(initial_s, c, final_s);
+        }
+        for (Symbol c = 'a'; c <= 'm'; c++) {
+            result.delta.add(initial_s, c, final_s);
+        }
+        CHECK(are_equivalent(nfa, result));
+    }
+
+    SECTION("Regex [\\x00-\\x7F]") {
+        Nfa nfa;
+        mata::parser::create_nfa(&nfa, "[\\x00-\\x7F]");
+
+        Nfa result;
+        State initial_s = 0;
+        State final_s = 1;
+        result.initial.insert(initial_s);
+        result.final.insert(final_s);
+        for (Symbol c = 0; c <= 0x7F; c++) {
+            result.delta.add(initial_s, c, final_s);
+        }
+        CHECK(are_equivalent(nfa, result));
+    }
+}
