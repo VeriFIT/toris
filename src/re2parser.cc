@@ -54,7 +54,7 @@ namespace {
 
             auto parsed_regex = re2::Regexp::Parse(
                     regex_string,
-                    static_cast<re2::Regexp::ParseFlags>(options.ParseFlags() | encoding),
+                    static_cast<re2::Regexp::ParseFlags>(options.ParseFlags() | static_cast<int>(encoding)),
                     &status);
             if (parsed_regex == nullptr) {
                 if (options.log_errors()) {

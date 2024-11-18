@@ -11,9 +11,9 @@
 
 // Encoding for the regular expression
 // FIXME: Use enum class re2::Regexp::ParseFlags from re2/regexp.h instead. It is not possible to include it here. Need to fix cmake.
-enum Encoding {
+enum class Encoding {
     UTF8 = 0,
-    Latin1 = 1<<5
+    Latin1 = 1 << 5
 };
 
 
