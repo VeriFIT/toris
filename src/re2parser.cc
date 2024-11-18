@@ -137,11 +137,14 @@ namespace {
             this->outgoingEdges = std::vector<std::vector<std::pair<mata::Symbol, mata::nfa::State>>> (prog_size);
 
             // We traverse all the states and create corresponding states and edges in Nfa
-            for (mata::nfa::State current_state = start_state; current_state < prog_size; current_state++) {
-                re2::Prog::Inst *inst = prog->inst(static_cast<int>(current_state));
+            for (State current_state = start_state, re2_state = start_state; re2_state < prog_size; ++
+                 re2_state) {
+                /// Whether to increment the current state @c current_state when the @c re2_state increments.
+                bool increment_current_state{true};
+                re2::Prog::Inst *inst = prog->inst(static_cast<int>(re2_state));
                 // Every type of state can be final (due to epsilon transition), so we check it regardless of its type
-                if (this->state_cache.is_final_state[current_state]) {
-                    this->make_state_final(current_state, explicit_nfa);
+                if (this->state_cache.is_final_state[re2_state]) {
+                    this->make_state_final(re2_state, explicit_nfa);
                 }
                 switch (inst->opcode()) {
                     default:
@@ -165,33 +168,35 @@ namespace {
                         empty_flag = static_cast<int>(inst->empty());
                         // ^ - beginning of line
                         if (empty_flag & re2::kEmptyBeginLine) {
-                            // TODO Symbol?
-                            symbols.push_back(300);
+                            increment_current_state = false;
                         }
                         // $ - end of line
                         if (empty_flag & re2::kEmptyEndLine) {
-                            // TODO Symbol?
-                            symbols.push_back(10);
+                            // TODO How to handle?
+                            // symbols.push_back(301);
+                            increment_current_state = false;
                         }
                         // \A - beginning of text
                         if (empty_flag & re2::kEmptyBeginText) {
-                            // TODO Symbol?
-                            symbols.push_back(301);
+                            increment_current_state = false;
                         }
                         // \z - end of text
                         if (empty_flag & re2::kEmptyEndText) {
-                            // TODO Symbol?
-                            symbols.push_back(302);
+                            // TODO How to handle?
+                            // symbols.push_back(302);
+                            increment_current_state = false;
                         }
                         // \b - word boundary
                         if (empty_flag & re2::kEmptyWordBoundary) {
-                            // TODO Symbol?
-                            symbols.push_back(303);
+                            // TODO How to handle?
+                            // symbols.push_back(303);
+                            increment_current_state = false;
                         }
                         // \B - not \b
                         if (empty_flag & re2::kEmptyNonWordBoundary) {
-                            // TODO Symbol?
-                            symbols.push_back(304);
+                            // TODO How to handle?
+                            // symbols.push_back(304);
+                            increment_current_state = false;
                         }
                         break;
                     // kInstByteRange represents states with a "byte range" on the outgoing transition(s)
@@ -203,7 +208,7 @@ namespace {
                                 symbols.push_back(symbol);
                                 // Foldcase causes RE2 to do a case-insensitive match, so transitions will be made for
                                 // both uppercase and lowercase symbols
-                                if (inst->foldcase()) {
+                                if (inst->foldcase() && symbol >= 'a' && symbol <= 'z') {
                                     symbols.push_back(symbol-ascii_shift_value);
                                 }
                             }
@@ -213,15 +218,17 @@ namespace {
                         if (!use_epsilon) {
                             // There is an epsilon transition to the currentState+1 we will need to copy transitions of
                             // the currentState+1 to the currentState.
-                            if (!this->state_cache.is_last[current_state]) {
-                                for (auto state: this->state_cache.state_mapping[current_state + 1]) {
-                                    copyEdgesFromTo.emplace_back(state, current_state);
+                            if (!this->state_cache.is_last[re2_state]) {
+                                for (auto state: this->state_cache.state_mapping[re2_state + 1]) {
+                                    copyEdgesFromTo.emplace_back(state, re2_state);
                                 }
                             }
                         }
                         symbols.clear();
                         break;
                 }
+
+                if (increment_current_state) { ++current_state; }
             }
             if (!use_epsilon) {
                 // We will traverse the vector in reversed order. Like that, we will also handle chains of epsilon transitions
@@ -420,7 +427,8 @@ namespace {
                 if (inst->last()) {
                     this->state_cache.is_last[state] = true;
                 }
-                if (inst->opcode() == re2::kInstMatch) {
+                if (inst->opcode() == re2::kInstMatch ||
+                    (inst->opcode() == re2::kInstEmptyWidth && inst->empty() & re2::kEmptyEndText)) {
                     this->state_cache.is_final_state[state] = true;
                 }
             }
@@ -507,6 +515,8 @@ void mata::parser::create_nfa(nfa::Nfa* nfa, const std::string& pattern, bool us
     RegexParser regexParser{};
     auto parsed_regex = regexParser.parse_regex_string(pattern, encoding);
     auto program = parsed_regex->CompileToProg(regexParser.options.max_mem() * 2 / 3);
+    // FIXME: use_epsilon = false completely breaks the method convert_pro_to_nfa(). Needs fixing before allowing to
+    //  pass the argument use_epsilon to convert_pro_to_nfa().
     regexParser.convert_pro_to_nfa(nfa, program, true, epsilon_value);
     delete program;
     // Decrements reference count and deletes object if the count reaches 0

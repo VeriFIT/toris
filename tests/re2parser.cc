@@ -1,8 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
-#include "mata/nfa/nfa.hh"
 #include "mata/parser/re2parser.hh"
+#include "mata/nfa/builder.hh"
+#include "mata/nfa/nfa.hh"
+
 using namespace mata::nfa;
 
 using Symbol = mata::Symbol;
@@ -1273,6 +1275,24 @@ TEST_CASE("mata::Parser error")
         CHECK(!x.is_in_lang(Run{ Word{ 'a', 'a', 'a', 'a', 'a', 'a' }, {} }));
     }
 
+    SECTION("Regex from issue #456") {
+        Nfa x;
+        mata::parser::create_nfa(&x, "[\\x00-\\x5a\\x5c-\\x7F]");
+
+        Nfa y;
+        State initial_s = 0;
+        State final_s = 1;
+        y.initial.insert(initial_s);
+        y.final.insert(final_s);
+        for (Symbol c = 0; c <= 0x7F; c++) {
+            if (c == 0x5B) {
+                continue;
+            }
+            y.delta.add(initial_s, c, final_s);
+        }
+        CHECK(are_equivalent(x, y));
+    }
+
     SECTION("Another failing regex") {
         Nfa x;
         mata::parser::create_nfa(&x, "(cd(abcde)+)|(a(aaa)+|ccc+)");
@@ -1598,3 +1618,153 @@ TEST_CASE("mata::Parser UTF-8 encoding")
     }
 
 } // }}}
+
+TEST_CASE("mata::parser Parsing regexes with ^ and $") {
+    Nfa nfa;
+    Nfa expected{};
+
+    SECTION("Handling of '\\'") {
+        mata::parser::create_nfa(&nfa, "a\\\\b");
+        expected = mata::nfa::builder::parse_from_mata(
+        std::string{ R"(
+            @NFA-explicit
+            %Alphabet-auto
+            %Initial q0
+            %Final q3
+            q0 97 q1
+            q1 92 q2
+            q2 98 q3)"
+        });
+        CHECK(mata::nfa::are_equivalent(nfa, expected));
+    }
+
+    SECTION("a|b$, a simple OR example with end marker") {
+        mata::parser::create_nfa(&nfa, "a|b$");
+        expected.initial.insert(0);
+        expected.delta.add(0, 'a', 1);
+        expected.delta.add(0, 'b', 1);
+        expected.final.insert(1);
+        CHECK(mata::nfa::are_equivalent(nfa, expected));
+    }
+
+    SECTION("^a|b, a simple OR example with begin marker") {
+        mata::parser::create_nfa(&nfa, "^a|b");
+        expected.initial.insert(0);
+        expected.delta.add(0, 'a', 1);
+        expected.delta.add(0, 'b', 1);
+        expected.final.insert(1);
+        CHECK(mata::nfa::are_equivalent(nfa, expected));
+    }
+
+    SECTION("^a|b$, a simple OR example with begin and end marker") {
+        mata::parser::create_nfa(&nfa, "^a|b$");
+        expected.initial.insert(0);
+        expected.delta.add(0, 'a', 1);
+        expected.delta.add(0, 'b', 1);
+        expected.final.insert(1);
+        CHECK(mata::nfa::are_equivalent(nfa, expected));
+    }
+
+    SECTION("^(a|b)$, a simple OR example with begin and end marker around capture group") {
+        mata::parser::create_nfa(&nfa, "^(a|b)$");
+        expected.initial.insert(0);
+        expected.delta.add(0, 'a', 1);
+        expected.delta.add(0, 'b', 1);
+        expected.final.insert(1);
+        CHECK(mata::nfa::are_equivalent(nfa, expected));
+    }
+
+    SECTION("a$|b, a simple OR example with end marker on the left side") {
+        mata::parser::create_nfa(&nfa, "a$|b");
+        expected.initial.insert(0);
+        expected.delta.add(0, 'a', 1);
+        expected.delta.add(0, 'b', 1);
+        expected.final.insert(1);
+        CHECK(mata::nfa::are_equivalent(nfa, expected));
+    }
+
+    SECTION("^a$|^b$, a simple OR example with multiple begin and end markers") {
+        mata::parser::create_nfa(&nfa, "^a$|^b$");
+        expected.initial.insert(0);
+        expected.delta.add(0, 'a', 1);
+        expected.delta.add(0, 'b', 1);
+        expected.final.insert(1);
+        CHECK(mata::nfa::are_equivalent(nfa, expected));
+    }
+
+    SECTION("aed|(bab)$, a simple OR example with trailing end marker") {
+        mata::parser::create_nfa(&nfa, "aed|(bab)$");
+        expected.initial.insert(0);
+        expected.delta.add(0, 'a', 1);
+        expected.delta.add(1, 'e', 2);
+        expected.delta.add(2, 'd', 3);
+        expected.delta.add(0, 'b', 4);
+        expected.delta.add(4, 'a', 5);
+        expected.delta.add(5, 'b', 3);
+        expected.final.insert(3);
+        CHECK(mata::nfa::are_equivalent(nfa, expected));
+    }
+
+    SECTION("aed|bab$, a simple OR example with trailing end marker") {
+        mata::parser::create_nfa(&nfa, "aed|bab$");
+        expected.initial.insert(0);
+        expected.delta.add(0, 'a', 1);
+        expected.delta.add(1, 'e', 2);
+        expected.delta.add(2, 'd', 3);
+        expected.delta.add(0, 'b', 4);
+        expected.delta.add(4, 'a', 5);
+        expected.delta.add(5, 'b', 3);
+        expected.final.insert(3);
+        CHECK(mata::nfa::are_equivalent(nfa, expected));
+    }
+
+    SECTION("^systempath\\=https|ftp$ correct parentheses") {
+        mata::parser::create_nfa(&nfa, "^[sS][yY][sS][tT][eE][mM][pP][aA][tT][hH]\\\\=(([hH][tT]{2}[pP][sS]?)|([fF][tT][pP]))$");
+        expected = mata::nfa::builder::parse_from_mata(std::string{ R"(
+            @NFA-explicit
+            %Alphabet-auto
+            %Initial q0
+            %Final q16 q17
+            q0 83 q1
+            q0 115 q1
+            q1 89 q2
+            q1 121 q2
+            q2 83 q3
+            q2 115 q3
+            q3 84 q4
+            q3 116 q4
+            q4 69 q5
+            q4 101 q5
+            q5 77 q6
+            q5 109 q6
+            q6 80 q7
+            q6 112 q7
+            q7 65 q8
+            q7 97 q8
+            q8 84 q9
+            q8 116 q9
+            q9 72 q10
+            q9 104 q10
+            q10 92 q11
+            q11 61 q12
+            q12 70 q18
+            q12 72 q13
+            q12 102 q18
+            q12 104 q13
+            q13 84 q14
+            q13 116 q14
+            q14 84 q15
+            q14 116 q15
+            q15 80 q16
+            q15 112 q16
+            q16 83 q17
+            q16 115 q17
+            q18 84 q19
+            q18 116 q19
+            q19 80 q17
+            q19 112 q17
+            )"
+        });
+        CHECK(mata::nfa::are_equivalent(nfa, expected));
+    }
+}
