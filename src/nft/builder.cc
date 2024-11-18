@@ -2,7 +2,6 @@
 
 #include "mata/utils/utils.hh"
 #include "mata/utils/sparse-set.hh"
-#include "mata/parser/mintermization.hh"
 #include "mata/nft/builder.hh"
 
 #include <fstream>
@@ -29,7 +28,7 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 
     // a lambda for translating state names to identifiers
     auto get_state_name = [&state_map, &aut](const std::string& str) {
-        if (!state_map->count(str)) {
+        if (!state_map->contains(str)) {
             State state = aut.add_state();
             state_map->insert({str, state});
             return state;
@@ -60,7 +59,7 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
     {
         for (const auto& str : it->second)
         {
-            State state = get_state_name(str);
+            const State state = get_state_name(str);
             aut.final.insert(state);
         }
     }
@@ -71,24 +70,25 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
         for (const auto &str : it->second)
         {
             std::stringstream ss(str);
-            std::string state_name, level_str;
+            std::string level_str;
             try {
+                std::string state_name;
                 std::getline(ss, state_name, ':');
                 std::getline(ss, level_str, ':');
                 if (!ss.eof()) {
                     throw std::runtime_error("Bad format of levels: too many colons in " + str);
                 }
 
-                State state = get_state_name(state_name);
-                long level = std::stol(level_str);
+                const State state = get_state_name(state_name);
+                const long level = std::stol(level_str);
                 if (level < 0) {
                     throw std::runtime_error("Bad format of levels: level " + level_str + " is out of range.");
                 }
                 aut.levels[state] = static_cast<Level>(level);
 
-            } catch (const std::invalid_argument &ex) {
+            } catch (const std::invalid_argument&) {
                 throw std::runtime_error("Bad format of levels: unsupported level " + level_str);
-            } catch (const std::out_of_range &ex) {
+            } catch (const std::out_of_range&) {
                 throw std::runtime_error("Bad format of levels: level " + level_str + " is out of range.");
             } catch (...) {
                 throw std::runtime_error("Bad format of levels.");
@@ -98,7 +98,7 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 
     it = parsec.dict.find("LevelsCnt");
     if (parsec.dict.end() != it) {
-        if (it->second.size() == 0) {
+        if (it->second.empty()) {
             throw std::runtime_error("LevelsCnt has to be specified.");
         }
         if (it->second.size() > 1) {
@@ -110,9 +110,9 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
                 throw std::runtime_error("Bad format of levels: level " + it->second[0] + " is out of range.");
             }
             aut.num_of_levels = static_cast<Level>(level);
-        } catch (const std::invalid_argument &ex) {
+        } catch (const std::invalid_argument&) {
             throw std::runtime_error("Bad format of levels: unsupported level " + it->second[0]);
-        } catch (const std::out_of_range &ex) {
+        } catch (const std::out_of_range&) {
             throw std::runtime_error("Bad format of levels: level " + it->second[0] + " is out of range.");
         }
     }
@@ -165,7 +165,7 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 
     // a lambda for translating state names to identifiers
     auto get_state_name = [&state_map, &aut](const std::string& str) {
-        if (!state_map->count(str)) {
+        if (!state_map->contains(str)) {
             State state = aut.add_state();
             state_map->insert({str, state});
             return state;
@@ -206,14 +206,14 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
         // we do not want to parse true/false (constant) as a state so we do not collect it
         final_formula_nodes = inter_aut.final_formula.collect_node_names();
     }
-    // for constant true, we will pretend that final nodes are negated with empty final_formula_nodes
-    bool final_nodes_are_negated = (inter_aut.final_formula.node.is_true() || inter_aut.are_final_states_conjunction_of_negation());
 
-    if (final_nodes_are_negated) {
-        // we add all states NOT in final_formula_nodes to final states
-        for (const auto &state_name_and_id : *state_map) {
-            if (!final_formula_nodes.count(state_name_and_id.first)) {
-                aut.final.insert(state_name_and_id.second);
+    // for constant true, we will pretend that final nodes are negated with empty final_formula_nodes
+    if (inter_aut.final_formula.node.is_true() || inter_aut.are_final_states_conjunction_of_negation()) {
+        // Final nodes are negated.
+        // We add all states NOT in final_formula_nodes to final states.
+        for (const auto & [state_name, state] : *state_map) {
+            if (!final_formula_nodes.contains(state_name)) {
+                aut.final.insert(state);
             }
         }
     } else {
@@ -286,7 +286,7 @@ Nft builder::parse_from_mata(const std::filesystem::path& nft_file) {
     Nft nft;
     try {
         nft = parse_from_mata(file_stream);
-    } catch (const std::exception& ex) {
+    } catch (const std::exception&) {
         file_stream.close();
         throw;
     }
@@ -307,16 +307,14 @@ Nft builder::create_from_nfa(const mata::nfa::Nfa& nfa, const size_t num_of_leve
     std::unordered_map<State, State> state_mapping{};
     state_mapping.reserve(nfa_num_of_states);
     State nft_state{ 0 };
-    State curr_nft_state;
 
     for (State source{ 0 }; source < nfa.num_of_states(); ++source) {
-        const auto nft_state_it{ state_mapping.find(source) };
-        if (nft_state_it == state_mapping.end()) {
+        if (const auto nft_state_it{ state_mapping.find(source) }; nft_state_it == state_mapping.end()) {
             state_mapping[source] = nft_state;
             ++nft_state;
         }
         for (const SymbolPost& symbol_post: nfa.delta[source]) {
-            curr_nft_state = state_mapping[source];
+            State curr_nft_state = state_mapping[source];
             Level level{ 0 };
             if (!epsilons.contains(symbol_post.symbol)) {
                 for (; level < num_of_additional_states_per_nfa_trans; ++level) {
@@ -349,11 +347,11 @@ Nft builder::create_from_nfa(const mata::nfa::Nfa& nfa, const size_t num_of_leve
         }
     }
     nft.initial.reserve(nfa.initial.size());
-    std::for_each(nfa.initial.begin(), nfa.initial.end(),
-                  [&](const State nfa_state) { nft.initial.insert(state_mapping[nfa_state]); });
+    std::ranges::for_each(nfa.initial,
+                          [&](const State nfa_state) { nft.initial.insert(state_mapping[nfa_state]); });
     nft.final.reserve(nfa.final.size());
-    std::for_each(nfa.final.begin(), nfa.final.end(),
-                  [&](const State nfa_state) { nft.final.insert(state_mapping[nfa_state]); });
+    std::ranges::for_each(nfa.final,
+                          [&](const State nfa_state) { nft.final.insert(state_mapping[nfa_state]); });
 
     // TODO(nft): HACK. Levels do not work if the size of delta differs from the size of the vector level.
     nft.levels.resize(nft.delta.num_of_states());
