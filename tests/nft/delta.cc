@@ -333,17 +333,17 @@ TEST_CASE("mata::nft::Delta iteration over transitions") {
 
         Delta::Transitions::const_iterator transitions_it{ nft.delta.transitions().begin() };
         CHECK(*transitions_it == Transition{ 0, 1, 1 });
-        transitions_it++;
+        ++transitions_it;
         CHECK(*transitions_it == Transition{ 0, 2, 1 });
-        transitions_it++;
-        transitions_it++;
+        ++transitions_it;
+        ++transitions_it;
         CHECK(*transitions_it == Transition{ 1, 3, 2 });
 
         Delta::Transitions::const_iterator transitions_from_1_to_end_it{ nft.delta, 1 };
         iterated_transitions.clear();
         while (transitions_from_1_to_end_it != nft.delta.transitions().end()) {
             iterated_transitions.push_back(*transitions_from_1_to_end_it);
-            transitions_from_1_to_end_it++;
+            ++transitions_from_1_to_end_it;
         }
         expected_transitions = std::vector<Transition>{ { 1, 3, 2 }, { 2, 0, 1 }, { 2, 0, 3 } };
         CHECK(iterated_transitions == expected_transitions);
@@ -409,7 +409,7 @@ TEST_CASE("mata::nft::StatePost::Moves") {
     CHECK(std::vector<Move>{ moves_from_source.begin(), moves_from_source.end() } ==
         std::vector<Move>{ { 'b', 2 }, { 'c', 2 }, { 'd', 2 } });
     StatePost::Moves::const_iterator move_incremented_it{ moves_from_source.begin() };
-    move_incremented_it++;
+    ++move_incremented_it;
     CHECK(*move_incremented_it == Move{ 'c', 2 });
     CHECK(*StatePost::Moves::const_iterator{ nft.delta.state_post(1) } == Move{ 'b', 2 });
     CHECK(move_incremented_it != moves_from_source.begin());
