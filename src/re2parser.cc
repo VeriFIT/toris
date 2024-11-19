@@ -46,14 +46,15 @@ namespace {
         /**
          * Creates parsed regex (ie. Regexp*) from string regex_string
          * @param regex_string Regex to be parsed as a string
+         * @param encoding Encoding of the regex, default is Latin1
          * @return Parsed regex as RE2 Regexp*
          */
-        re2::Regexp* parse_regex_string(const std::string& regex_string) const {
+        re2::Regexp* parse_regex_string(const std::string& regex_string, const Encoding encoding = Encoding::Latin1) const {
             re2::RegexpStatus status;
 
             auto parsed_regex = re2::Regexp::Parse(
                     regex_string,
-                    static_cast<re2::Regexp::ParseFlags>(options.ParseFlags()),
+                    static_cast<re2::Regexp::ParseFlags>(options.ParseFlags() | static_cast<int>(encoding)),
                     &status);
             if (parsed_regex == nullptr) {
                 if (options.log_errors()) {
@@ -498,20 +499,21 @@ namespace {
 }
 
  /**
- * The main method, it creates NFA from regex
+ * The main method, it creates NFA from regex.
  * @param pattern regex as string
  * @param use_epsilon whether to create NFA with epsilon transitions or not
  * @param epsilon_value value, that will represent epsilon on transitions
  * @param use_reduce if set to true the result is trimmed and reduced using simulation reduction
+ * @param encoding encoding of the regex, default is Latin1
  * @return Nfa corresponding to pattern
  */
-void mata::parser::create_nfa(nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, mata::Symbol epsilon_value, bool use_reduce) {
+void mata::parser::create_nfa(nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, mata::Symbol epsilon_value, bool use_reduce, const Encoding encoding) {
     if (nfa == nullptr) {
         throw std::runtime_error("create_nfa: nfa should not be NULL");
     }
 
     RegexParser regexParser{};
-    auto parsed_regex = regexParser.parse_regex_string(pattern);
+    auto parsed_regex = regexParser.parse_regex_string(pattern, encoding);
     auto program = parsed_regex->CompileToProg(regexParser.options.max_mem() * 2 / 3);
     // FIXME: use_epsilon = false completely breaks the method convert_pro_to_nfa(). Needs fixing before allowing to
     //  pass the argument use_epsilon to convert_pro_to_nfa().

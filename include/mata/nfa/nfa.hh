@@ -207,6 +207,14 @@ public:
     Nfa& trim(StateRenaming* state_renaming = nullptr);
 
     /**
+     * @brief Decodes automaton from UTF-8 encoding. Method removes unreachable states from delta.
+     *
+     * @return Decoded automaton.
+     */
+
+    Nfa decode_utf8() const;
+
+    /**
      * @brief Returns vector ret where ret[q] is the length of the shortest path from any initial state to q
      */
     std::vector<State> distances_from_initial() const;

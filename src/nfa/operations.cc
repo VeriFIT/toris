@@ -31,7 +31,7 @@ namespace {
             unused_symbol = *it + 1;
             ++it;
             const auto used_symbols_end = used_symbols.end();
-            while (it != used_symbols_end && unused_symbol == *it) {    
+            while (it != used_symbols_end && unused_symbol == *it) {
                 unused_symbol = *it + 1;
                 ++it;
             }
@@ -39,7 +39,7 @@ namespace {
                 throw std::runtime_error("all symbols are used, we cannot compute simulation reduction");
             }
         }
-        
+
         const size_t state_num{ aut.num_of_states() };
         Simlib::ExplicitLTS lts_for_simulation(state_num);
 
@@ -266,7 +266,7 @@ namespace {
             for (State q: S) {
                 mata::utils::push_back(synchronized_iterator, aut.delta[q]);
             }
-  
+
             while (synchronized_iterator.advance()) {
                 bool add = false;               // check whether to add transitions
 
@@ -1169,7 +1169,7 @@ std::set<mata::Word> mata::nfa::Nfa::get_words(unsigned max_length) const {
             result.insert(mata::Word());
         }
     }
-    
+
     // will be used during the loop
     std::vector<std::pair<State, mata::Word>> new_worklist;
 

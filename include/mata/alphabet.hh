@@ -433,6 +433,23 @@ public:
 
     void clear() override { symbol_map_.clear(); next_symbol_value_ = 0; }
 }; // class OnTheFlyAlphabet.
+
+/**
+ * @brief Encode a word using UTF-8 encoding.
+ *
+ * @param[in] word The word to encode.
+ * @return The UTF-8 encoded word.
+ */
+Word encode_word_utf8(const Word& word);
+
+/**
+ * @brief Decode a word using UTF-8 encoding.
+ *
+ * @param[in] word The word to decode.
+ * @return The UTF-8 decoded word.
+ */
+Word decode_word_utf8(const Word& word);
+
 } // namespace mata
 
 namespace std
