@@ -172,7 +172,7 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
         CHECK(nfa.num_of_states() == num_of_states);
         CHECK(nfa.initial.size() == 1);
         CHECK(nfa.final.size() == static_cast<size_t>(std::round(final_state_density * static_cast<float>(num_of_states))));
-        CHECK(nfa.delta.get_used_symbols().size() <= alphabet_size);
+        CHECK(nfa.delta.get_used_symbols().size() == alphabet_size);
         CHECK(nfa.delta.num_of_transitions() == static_cast<size_t>(std::round(transition_density * static_cast<float>(num_of_states))) * alphabet_size);
     }
 
@@ -186,7 +186,7 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
         CHECK(nfa.num_of_states() == num_of_states);
         CHECK(nfa.initial.size() == 1);
         CHECK(nfa.final.size() == num_of_states);
-        CHECK(nfa.delta.get_used_symbols().size() <= alphabet_size);
+        CHECK(nfa.delta.get_used_symbols().size() == alphabet_size);
         CHECK(nfa.delta.num_of_transitions() == static_cast<size_t>(std::round(transition_density * static_cast<float>(num_of_states))) * alphabet_size);
     }
 
@@ -200,8 +200,23 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
         CHECK(nfa.num_of_states() == num_of_states);
         CHECK(nfa.initial.size() == 1);
         CHECK(nfa.final.size() == static_cast<size_t>(std::round(final_state_density * static_cast<float>(num_of_states))));
-        CHECK(nfa.delta.get_used_symbols().size() <= alphabet_size);
+        CHECK(nfa.delta.get_used_symbols().size() == alphabet_size);
         CHECK(nfa.delta.num_of_transitions() == static_cast<size_t>(std::round(transition_density * static_cast<float>(num_of_states))) * alphabet_size);
+    }
+
+    SECTION("BIG") {
+        num_of_states = 1000;
+        alphabet_size = 100;
+        transition_density = 5;
+        final_state_density = 1;
+
+        Nfa nfa = mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density);
+        CHECK(nfa.num_of_states() == num_of_states);
+        CHECK(nfa.initial.size() == 1);
+        CHECK(nfa.final.size() == num_of_states);
+        CHECK(nfa.delta.get_used_symbols().size() == alphabet_size);
+        CHECK(nfa.delta.num_of_transitions() == static_cast<size_t>(std::round(transition_density * static_cast<float>(num_of_states))) * alphabet_size);
+
     }
 
     SECTION("Throw runtime_error. transition_density < 0") {
