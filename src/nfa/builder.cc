@@ -4,6 +4,8 @@
 #include "mata/parser/mintermization.hh"
 
 #include <fstream>
+#include <random>
+#include <cmath>
 
 using namespace mata::nfa;
 using mata::nfa::Nfa;
@@ -214,6 +216,48 @@ Nfa builder::create_sigma_star_nfa(mata::Alphabet* alphabet) {
     for (const mata::Symbol& symbol : alphabet->get_alphabet_symbols()) {
         nfa.delta.add(0, symbol, 0);
     }
+    return nfa;
+}
+
+Nfa builder::create_tabakov_vardi_nfa(const size_t num_of_states, const size_t alphabet_size, const float transition_density, const float final_state_density) {
+    if (transition_density < 0 || static_cast<size_t>(transition_density) > num_of_states) {
+        // Maximum of num_of_states^2 unique transitions for one symbol can be created.
+        throw std::runtime_error("Transition density must be in range [0, num_of_states]");
+    }
+    if (final_state_density < 0 || final_state_density > 1) {
+        // Maximum of num_of_states final states can be created.
+        throw std::runtime_error("Final state density must be in range [0, 1]");
+    }
+
+    Nfa nfa{ num_of_states, StateSet{ 0 }, StateSet{ 0 }, new OnTheFlyAlphabet{} };
+
+    // Initialize the random number generator
+    std::random_device rd;  // Seed for the random number engine
+    std::mt19937 gen(rd()); // Mersenne Twister engine
+    std::uniform_int_distribution<State> state_dis(0, num_of_states - 1);
+    std::uniform_int_distribution<Symbol> symbol_dis(0, static_cast<Symbol>(alphabet_size - 1));
+
+    // Create final states
+    const size_t num_of_final_states{ static_cast<size_t>(std::round(static_cast<float>(num_of_states) * final_state_density)) };
+    while (nfa.final.size() < num_of_final_states) {
+        nfa.final.insert(state_dis(gen));
+    }
+
+    // Create transitions
+    const size_t num_of_transitions_per_symbol{ static_cast<size_t>(std::round(static_cast<float>(num_of_states) * transition_density)) };
+    for (Symbol symbol{ 0 }; symbol < alphabet_size; symbol++) {
+        size_t num_of_added_transitions = 0;
+        while (num_of_added_transitions < num_of_transitions_per_symbol) {
+            const State src_state{ state_dis(gen) };
+            const State tgt_state{ state_dis(gen) };
+            if (nfa.delta.contains(src_state, symbol, tgt_state)) {
+                continue;
+            }
+            nfa.delta.add(src_state, symbol, tgt_state);
+            num_of_added_transitions++;
+        }
+    }
+
     return nfa;
 }
 

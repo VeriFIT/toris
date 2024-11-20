@@ -45,6 +45,18 @@ Nfa create_empty_string_nfa();
  */
 Nfa create_sigma_star_nfa(Alphabet* alphabet = new OnTheFlyAlphabet{});
 
+/**
+ * Creates Tabakov-Vardi random NFA.
+ *
+ * @param num_of_states Number of states in the automaton.
+ * @param alphabet_size Size of the alphabet.
+ * @param transition_density If the density is 1, the automaton will have @p num_of_states transition for each symbol.
+ *  Source and target states are chosen randomly.
+ * @param final_state_density Density of final states in the automaton. If the density is 1, every state will be final.
+ *
+ */
+Nfa create_tabakov_vardi_nfa(const size_t num_of_states, const size_t alphabet_size, const float transition_density, const float final_state_density);
+
 /** Loads an automaton from Parsed object */
 // TODO this function should the same thing as the one taking IntermediateAut or be deleted
 Nfa construct(const mata::parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map = nullptr);

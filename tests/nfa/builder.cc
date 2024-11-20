@@ -2,6 +2,7 @@
 
 #include <unordered_set>
 #include <fstream>
+#include <cmath>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -139,5 +140,103 @@ TEST_CASE("parse_from_mata()") {
             parsed.delta.contains(51, 'z', 42);
             CHECK(are_equivalent(parsed, nfa));
         }
+    }
+}
+
+TEST_CASE("Create Tabakov-Vardi NFA") {
+    size_t num_of_states;
+    size_t alphabet_size;
+    float transition_density;
+    float final_state_density;
+
+    SECTION("EMPTY") {
+        num_of_states = 0;
+        alphabet_size = 0;
+        transition_density = 0;
+        final_state_density = 0;
+
+        Nfa nfa = mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density);
+        CHECK(nfa.num_of_states() == 1);
+        CHECK(nfa.initial.size() == 1);
+        CHECK(nfa.final.size() == 1);
+        CHECK(nfa.delta.empty());
+    }
+
+    SECTION("10-5-0.5-0.5") {
+        num_of_states = 10;
+        alphabet_size = 5;
+        transition_density = 0.5;
+        final_state_density = 0.5;
+
+        Nfa nfa = mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density);
+        CHECK(nfa.num_of_states() == num_of_states);
+        CHECK(nfa.initial.size() == 1);
+        CHECK(nfa.final.size() == static_cast<size_t>(std::round(final_state_density * static_cast<float>(num_of_states))));
+        CHECK(nfa.delta.get_used_symbols().size() <= alphabet_size);
+        CHECK(nfa.delta.num_of_transitions() == static_cast<size_t>(std::round(transition_density * static_cast<float>(num_of_states))) * alphabet_size);
+    }
+
+    SECTION("Max final") {
+        num_of_states = 10;
+        alphabet_size = 5;
+        transition_density = 0.5;
+        final_state_density = 1;
+
+        Nfa nfa = mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density);
+        CHECK(nfa.num_of_states() == num_of_states);
+        CHECK(nfa.initial.size() == 1);
+        CHECK(nfa.final.size() == num_of_states);
+        CHECK(nfa.delta.get_used_symbols().size() <= alphabet_size);
+        CHECK(nfa.delta.num_of_transitions() == static_cast<size_t>(std::round(transition_density * static_cast<float>(num_of_states))) * alphabet_size);
+    }
+
+    SECTION("Max transitions") {
+        num_of_states = 10;
+        alphabet_size = 5;
+        transition_density = 10;
+        final_state_density = 0.5;
+
+        Nfa nfa = mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density);
+        CHECK(nfa.num_of_states() == num_of_states);
+        CHECK(nfa.initial.size() == 1);
+        CHECK(nfa.final.size() == static_cast<size_t>(std::round(final_state_density * static_cast<float>(num_of_states))));
+        CHECK(nfa.delta.get_used_symbols().size() <= alphabet_size);
+        CHECK(nfa.delta.num_of_transitions() == static_cast<size_t>(std::round(transition_density * static_cast<float>(num_of_states))) * alphabet_size);
+    }
+
+    SECTION("Throw runtime_error. transition_density < 0") {
+        num_of_states = 10;
+        alphabet_size = 5;
+        transition_density = static_cast<float>(-0.1);
+        final_state_density = 0.5;
+
+        CHECK_THROWS_AS(mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density), std::runtime_error);
+    }
+
+    SECTION("Throw runtime_error. transition_density > num_of_states") {
+        num_of_states = 10;
+        alphabet_size = 5;
+        transition_density = 11;
+        final_state_density = 0.5;
+
+        CHECK_THROWS_AS(mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density), std::runtime_error);
+    }
+
+    SECTION("Throw runtime_error. final_state_density < 0") {
+        num_of_states = 10;
+        alphabet_size = 5;
+        transition_density = 0.5;
+        final_state_density = static_cast<float>(-0.1);
+
+        CHECK_THROWS_AS(mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density), std::runtime_error);
+    }
+
+    SECTION("Throw runtime_error. final_state_density > 1") {
+        num_of_states = 10;
+        alphabet_size = 5;
+        transition_density = 0.5;
+        final_state_density = static_cast<float>(1.1);
+
+        CHECK_THROWS_AS(mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density), std::runtime_error);
     }
 }
