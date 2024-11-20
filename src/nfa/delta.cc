@@ -557,19 +557,26 @@ OrdVector<Symbol> Delta::get_used_symbols() const {
     // return ov;
 
     ///WITH BOOL VECTOR, DIFFERENT VARIANT? (1.9s):
-    //std::vector<bool> bv = get_used_symbols_bv();
-    //std::vector<Symbol> v(std::count(bv.begin(), bv.end(), true));
-    //return utils::OrdVector<Symbol>(v);
+    // std::vector<bool> bv = get_used_symbols_bv();
+    // utils::OrdVector<Symbol> ov{};
+    // ov.reserve(static_cast<size_t>(std::count(bv.begin(), bv.end(), true)));
+    // const size_t bv_size{ bv.size() };
+    // for (Symbol i = 0; i < bv_size; i++) {
+    //     if (bv[i]) {
+    //         ov.push_back(i);
+    //     }
+    // }
+    // return ov;
 
     //WITH CHAR VECTOR (should be the fastest, haven't tried in this branch):
     //BEWARE: failing in one noodlificatoin test ("Simple automata -- epsilon result") ... strange
-    //BoolVector chv = get_used_symbols_chv();
-    //utils::OrdVector<Symbol> ov;
-    //for(Symbol i = 0;i<chv.size();i++)
+    // BoolVector chv = get_used_symbols_chv();
+    // utils::OrdVector<Symbol> ov;
+    // for(Symbol i = 0;i<chv.size();i++)
     //    if (chv[i]) {
     //        ov.push_back(i);
     //    }
-    //return ov;
+    // return ov;
 }
 
 // Other versions, maybe an interesting experiment with speed of data structures.
@@ -615,7 +622,7 @@ std::set<Symbol> Delta::get_used_symbols_set() const {
 mata::utils::SparseSet<Symbol> Delta::get_used_symbols_sps() const {
 #ifdef _STATIC_STRUCTURES_
     //static seems to speed things up a little
-    static utils::SparseSet<Symbol> symbols(64,false);
+    static utils::SparseSet<Symbol> symbols(64);
     symbols.clear();
 #else
     utils::SparseSet<Symbol> symbols(64);
@@ -644,7 +651,6 @@ std::vector<bool> Delta::get_used_symbols_bv() const {
     for (const StatePost& state_post: state_posts_) {
         for (const SymbolPost& symbol_post: state_post) {
             const size_t capacity{ symbol_post.symbol + 1 };
-            reserve_on_insert(symbols, capacity);
             if (symbols.size() < capacity) {
                 symbols.resize(capacity);
             }
@@ -665,7 +671,10 @@ mata::BoolVector Delta::get_used_symbols_chv() const {
     //symbols.dont_track_elements();
     for (const StatePost& state_post: state_posts_) {
         for (const SymbolPost& symbol_post: state_post) {
-            reserve_on_insert(symbols,symbol_post.symbol);
+            const size_t capacity{ symbol_post.symbol + 1 };
+            if (symbols.size() < capacity) {
+                symbols.resize(capacity * 2);
+            }
             symbols[symbol_post.symbol] = true;
         }
     }
