@@ -155,7 +155,7 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
         transition_density = 0;
         final_state_density = 0;
 
-        Nfa nfa = mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density);
+        Nfa nfa = mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, transition_density, final_state_density);
         CHECK(nfa.num_of_states() == 1);
         CHECK(nfa.initial.size() == 1);
         CHECK(nfa.final.size() == 1);
@@ -168,7 +168,7 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
         transition_density = 0.5;
         final_state_density = 0.5;
 
-        Nfa nfa = mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density);
+        Nfa nfa = mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, transition_density, final_state_density);
         CHECK(nfa.num_of_states() == num_of_states);
         CHECK(nfa.initial.size() == 1);
         CHECK(nfa.final.size() == static_cast<size_t>(std::round(final_state_density * static_cast<float>(num_of_states))));
@@ -182,7 +182,7 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
         transition_density = 0.5;
         final_state_density = 1;
 
-        Nfa nfa = mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density);
+        Nfa nfa = mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, transition_density, final_state_density);
         CHECK(nfa.num_of_states() == num_of_states);
         CHECK(nfa.initial.size() == 1);
         CHECK(nfa.final.size() == num_of_states);
@@ -196,7 +196,7 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
         transition_density = 10;
         final_state_density = 0.5;
 
-        Nfa nfa = mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density);
+        Nfa nfa = mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, transition_density, final_state_density);
         CHECK(nfa.num_of_states() == num_of_states);
         CHECK(nfa.initial.size() == 1);
         CHECK(nfa.final.size() == static_cast<size_t>(std::round(final_state_density * static_cast<float>(num_of_states))));
@@ -210,7 +210,7 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
         transition_density = 5;
         final_state_density = 1;
 
-        Nfa nfa = mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density);
+        Nfa nfa = mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, transition_density, final_state_density);
         CHECK(nfa.num_of_states() == num_of_states);
         CHECK(nfa.initial.size() == 1);
         CHECK(nfa.final.size() == num_of_states);
@@ -225,7 +225,7 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
         transition_density = static_cast<float>(-0.1);
         final_state_density = 0.5;
 
-        CHECK_THROWS_AS(mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density), std::runtime_error);
+        CHECK_THROWS_AS(mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, transition_density, final_state_density), std::runtime_error);
     }
 
     SECTION("Throw runtime_error. transition_density > num_of_states") {
@@ -234,7 +234,7 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
         transition_density = 11;
         final_state_density = 0.5;
 
-        CHECK_THROWS_AS(mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density), std::runtime_error);
+        CHECK_THROWS_AS(mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, transition_density, final_state_density), std::runtime_error);
     }
 
     SECTION("Throw runtime_error. final_state_density < 0") {
@@ -243,7 +243,7 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
         transition_density = 0.5;
         final_state_density = static_cast<float>(-0.1);
 
-        CHECK_THROWS_AS(mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density), std::runtime_error);
+        CHECK_THROWS_AS(mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, transition_density, final_state_density), std::runtime_error);
     }
 
     SECTION("Throw runtime_error. final_state_density > 1") {
@@ -252,6 +252,6 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
         transition_density = 0.5;
         final_state_density = static_cast<float>(1.1);
 
-        CHECK_THROWS_AS(mata::nfa::builder::create_tabakov_vardi_nfa(num_of_states, alphabet_size, transition_density, final_state_density), std::runtime_error);
+        CHECK_THROWS_AS(mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, transition_density, final_state_density), std::runtime_error);
     }
 }
