@@ -923,21 +923,24 @@ def concatenate_with_result_state_maps(Nfa lhs, Nfa rhs, use_epsilon: bool = Fal
     return result, lhs_map, rhs_map
 
 
-def complement(Nfa lhs, alph.Alphabet alphabet, params = None):
-    """Performs complement of lhs
+def complement(Nfa nfa, alph.Alphabet alphabet, params = None):
+    """Computes the complement of the nfa.
 
-    :param Nfa lhs: complemented automaton
-    :param OnTheFlyAlphabet alphabet: alphabet of the lhs
-    :param dict params: additional params
-      - "algorithm": "classical" (classical algorithm determinizes the automaton, makes it complete and swaps final and non-final states);
-      - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
-    :return: complemented automaton
+    :param Nfa nfa: The automaton to complement.
+    :param OnTheFlyAlphabet alphabet: The alphabet of the nfa.
+    :param dict params: Additional parameters.
+      - "algorithm":
+        - "classical": The classical algorithm determinizes the automaton, makes it complete and swaps final and
+                        non-final states.
+        - "brzozowski": The Brzozowski algorithm determinizes the automaton using Brzozowski minimization, makes it
+                         complete, and swaps final and non-final states.
+    :return: The complemented automaton.
     """
     result = Nfa()
-    params = params or {'algorithm': 'classical', 'minimize': 'false'}
+    params = params or {'algorithm': 'classical'}
     mata_nfa.c_complement(
         result.thisptr.get(),
-        dereference(lhs.thisptr.get()),
+        dereference(nfa.thisptr.get()),
         <CAlphabet&>dereference(alphabet.as_base()),
         {
             k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
