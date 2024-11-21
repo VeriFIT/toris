@@ -50,7 +50,7 @@ Nfa create_sigma_star_nfa(Alphabet* alphabet = new OnTheFlyAlphabet{});
  *
  * @param num_of_states Number of states in the automaton.
  * @param alphabet_size Size of the alphabet.
- * @param transition_density If the density is 1, the automaton will have @p num_of_states transition for each symbol.
+ * @param transition_density If the density is 1, the automaton will have @p num_of_states transitions for each symbol.
  *  Source and target states are chosen randomly. The value must be in range [0, num_of_states].
  * @param final_state_density Density of final states in the automaton. If the density is 1, every state will be final.
  *  The value must be in range [0, 1].
