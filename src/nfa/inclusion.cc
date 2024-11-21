@@ -257,7 +257,7 @@ namespace {
     AlgoType set_algorithm(const std::string &function_name, const ParameterMap &params) {
         if (!haskey(params, "algorithm")) {
             throw std::runtime_error(function_name +
-                                     " requires setting the \"algo\" key in the \"params\" argument; "
+                                     " requires setting the \"algorithm\" key in the \"params\" argument; "
                                      "received: " + std::to_string(params));
         }
 
@@ -269,7 +269,7 @@ namespace {
             algo = algorithms::is_included_antichains;
         } else {
             throw std::runtime_error(std::to_string(__func__) +
-                                     " received an unknown value of the \"algo\" key: " + str_algo);
+                                     " received an unknown value of the \"algorithm\" key: " + str_algo);
         }
 
         return algo;

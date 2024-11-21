@@ -34,7 +34,7 @@ Nfa mata::nfa::complement(const Nfa& aut, const mata::utils::OrdVector<mata::Sym
     decltype(algorithms::complement_classical)* algo = algorithms::complement_classical;
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
-                                 " requires setting the \"algo\" key in the \"params\" argument; "
+                                 " requires setting the \"algorithm\" key in the \"params\" argument; "
                                  "received: " + std::to_string(params));
     }
 
@@ -43,7 +43,7 @@ Nfa mata::nfa::complement(const Nfa& aut, const mata::utils::OrdVector<mata::Sym
     else if ("brzozowski" == str_algo) {  algo = algorithms::complement_brzozowski; }
     else {
         throw std::runtime_error(std::to_string(__func__) +
-                                 " received an unknown value of the \"algo\" key: " + str_algo);
+                                 " received an unknown value of the \"algorithm\" key: " + str_algo);
     }
 
     return algo(aut, symbols);
