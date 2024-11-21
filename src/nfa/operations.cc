@@ -936,7 +936,7 @@ Nfa mata::nfa::minimize(
     decltype(algorithms::minimize_brzozowski)* algo = algorithms::minimize_brzozowski;
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
-            " requires setting the \"algo\" key in the \"params\" argument; "
+            " requires setting the \"algorithm\" key in the \"params\" argument; "
             "received: " + std::to_string(params));
     }
 
@@ -944,7 +944,7 @@ Nfa mata::nfa::minimize(
     if ("brzozowski" == str_algo) {  /* default */ }
     else {
         throw std::runtime_error(std::to_string(__func__) +
-            " received an unknown value of the \"algo\" key: " + str_algo);
+            " received an unknown value of the \"algorithm\" key: " + str_algo);
     }
 
     return algo(aut);

@@ -1874,7 +1874,7 @@ TEST_CASE("mata::nfa::is_universal()")
         OnTheFlyAlphabet alph{};
 
         CHECK_THROWS_WITH(aut.is_universal(alph, params),
-            Catch::Matchers::ContainsSubstring("requires setting the \"algo\" key"));
+            Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key"));
     }
 
     SECTION("wrong parameters 2")
@@ -2209,7 +2209,7 @@ q10 67 q5
         OnTheFlyAlphabet alph{};
 
         CHECK_THROWS_WITH(is_included(smaller, bigger, &alph, params),
-            Catch::Matchers::ContainsSubstring("requires setting the \"algo\" key"));
+            Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key"));
         CHECK_NOTHROW(is_included(smaller, bigger, &alph));
     }
 
@@ -2371,9 +2371,9 @@ TEST_CASE("mata::nfa::are_equivalent")
         OnTheFlyAlphabet alph{};
 
         CHECK_THROWS_WITH(are_equivalent(smaller, bigger, &alph, params),
-                          Catch::Matchers::ContainsSubstring("requires setting the \"algo\" key"));
+                          Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key"));
         CHECK_THROWS_WITH(are_equivalent(smaller, bigger, params),
-                          Catch::Matchers::ContainsSubstring("requires setting the \"algo\" key"));
+                          Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key"));
         CHECK_NOTHROW(are_equivalent(smaller, bigger));
     }
 
