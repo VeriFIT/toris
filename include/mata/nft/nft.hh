@@ -105,6 +105,15 @@ public:
         this->levels = levels.empty() ? Levels(num_of_states, DEFAULT_LEVEL) : std::move(levels);
     }
 
+    static Nft with_levels(const size_t num_of_levels, const size_t num_of_states = 0, Levels levels = {}, utils::SparseSet<State> initial_states = {},
+                 utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr) {
+        return Nft{ num_of_states, std::move(initial_states), std::move(final_states), std::move(levels), num_of_levels, alphabet };
+    }
+    static Nft with_levels(const size_t num_of_levels, Delta delta, Levels levels = {}, utils::SparseSet<State> initial_states = {},
+                 utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr) {
+        return Nft{ std::move(delta), std::move(initial_states), std::move(final_states), std::move(levels), num_of_levels, alphabet };
+    }
+
     explicit Nft(const mata::nfa::Nfa& other): mata::nfa::Nfa(other), levels(other.num_of_states(), DEFAULT_LEVEL) {}
 
     /**

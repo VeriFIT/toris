@@ -61,22 +61,23 @@ Nft& Nft::concatenate(const Nft& aut) {
 
 Nft algorithms::concatenate_eps(const Nft& lhs, const Nft& rhs, const Symbol& epsilon, bool use_epsilon,
                                 StateRenaming* lhs_state_renaming, StateRenaming* rhs_state_renaming) {
+    assert(lhs.num_of_levels == rhs.num_of_levels);
     // Compute concatenation of given automata.
     // Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
 
     if (lhs.num_of_states() == 0 || rhs.num_of_states() == 0 || lhs.initial.empty() || lhs.final.empty() ||
         rhs.initial.empty() || rhs.final.empty()) {
-        return Nft{};
+        return Nft::with_levels(lhs.num_of_levels);
     }
 
-    const unsigned long lhs_states_num{lhs.num_of_states() };
-    const unsigned long rhs_states_num{rhs.num_of_states() };
-    Nft result{}; // Concatenated automaton.
+    const unsigned long lhs_states_num{ lhs.num_of_states() };
+    const unsigned long rhs_states_num{ rhs.num_of_states() };
+    Nft result{ Nft::with_levels(lhs.num_of_levels) }; // Concatenated automaton.
     StateRenaming _lhs_states_renaming{}; // Map mapping rhs states to result states.
     StateRenaming _rhs_states_renaming{}; // Map mapping rhs states to result states.
 
     const size_t result_num_of_states{lhs_states_num + rhs_states_num};
-    if (result_num_of_states == 0) { return Nft{}; }
+    if (result_num_of_states == 0) { return Nft{ Nft::with_levels(lhs.num_of_levels) }; }
 
     // Map lhs states to result states.
     _lhs_states_renaming.reserve(lhs_states_num);
@@ -92,7 +93,7 @@ Nft algorithms::concatenate_eps(const Nft& lhs, const Nft& rhs, const Symbol& ep
         ++result_state_index;
     }
 
-    result = Nft();
+    result = Nft::with_levels(lhs.num_of_levels);
     result.delta = lhs.delta;
     result.initial = lhs.initial;
     result.add_state(result_num_of_states-1);
@@ -126,9 +127,7 @@ Nft algorithms::concatenate_eps(const Nft& lhs, const Nft& rhs, const Symbol& ep
         }
     }
 
-    if (!use_epsilon) {
-        result.remove_epsilon();
-    }
+    if (!use_epsilon) { result.remove_epsilon(); }
     if (lhs_state_renaming != nullptr) { *lhs_state_renaming = _lhs_states_renaming; }
     if (rhs_state_renaming != nullptr) { *rhs_state_renaming = _rhs_states_renaming; }
     return result;

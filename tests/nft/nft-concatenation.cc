@@ -578,18 +578,18 @@ TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
 }
 
 TEST_CASE("mata::nft::(a|b)*") {
-    Nft aut1;
+    Nft aut1{ Nft::with_levels(1) };
     mata::parser::create_nfa(&aut1, "a*");
-    Nft aut2;
+    Nft aut2{ Nft::with_levels(1) };
     mata::parser::create_nfa(&aut2, "b*");
-    Nft aut3;
+    Nft aut3{ Nft::with_levels(1) };
     mata::parser::create_nfa(&aut3, "a*b*");
-    auto concatenated_aut{ concatenate(aut1, aut2) };
+    const Nft concatenated_aut{ concatenate(aut1, aut2) };
     CHECK(are_equivalent(concatenated_aut, aut3));
 }
 
 TEST_CASE("mata::nft::Bug with epsilon transitions") {
-    Nft nft1{};
+    Nft nft1{ Nft::with_levels(1, 4) };
     nft1.initial.insert(0);
     nft1.final.insert(3);
     nft1.delta.add(0, 97, 0);
@@ -600,7 +600,7 @@ TEST_CASE("mata::nft::Bug with epsilon transitions") {
     nft1.delta.add(1, 97, 2);
     nft1.delta.add(2, 98, 3);
 
-    Nft nft2{};
+    Nft nft2{ Nft::with_levels(1, 1) };
     nft2.initial.insert(0);
     nft2.final.insert(0);
     nft2.delta.add(0, 97, 0);
@@ -608,9 +608,10 @@ TEST_CASE("mata::nft::Bug with epsilon transitions") {
     nft2.delta.add(0, 99, 0);
     nft2.delta.add(0, 100, 0);
 
-    auto result{ concatenate(nft1, nft2, true) };
+    const Nft result{ concatenate(nft1, nft2, true) };
 
     Nft expected{ nft1 };
+    assert(expected.num_of_levels == nft1.num_of_levels);
     expected.delta.add(3, EPSILON, 4);
     expected.delta.add(4, 97, 4);
     expected.delta.add(4, 98, 4);
@@ -622,8 +623,6 @@ TEST_CASE("mata::nft::Bug with epsilon transitions") {
 }
 
 TEST_CASE("mata::nft::concatenate() inplace") {
-
-
     SECTION("Empty automaton without states") {
         Nft lhs{};
         Nft rhs{};

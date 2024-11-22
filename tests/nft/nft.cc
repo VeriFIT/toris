@@ -2770,16 +2770,16 @@ TEST_CASE("mata::nft::make_complement(): A segmentation fault") {
 }
 
 TEST_CASE("mata::nft:: create simple automata") {
-    Nft nft{ builder::create_empty_string_nft() };
+    Nft nft{ builder::create_empty_string_nft(1) };
     CHECK(nft.is_in_lang(Word{}));
     CHECK(get_word_lengths(nft) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
 
     OnTheFlyAlphabet alphabet{ { "a", 0 }, { "b", 1 }, { "c", 2 } };
-    nft = builder::create_sigma_star_nft(&alphabet);
+    nft = builder::create_sigma_star_nft(&alphabet, 1);
     CHECK(nft.is_in_lang({ {}, {} }));
-    CHECK(nft.is_in_lang({  0 , {} }));
-    CHECK(nft.is_in_lang({  1 , {} }));
-    CHECK(nft.is_in_lang({  2 , {} }));
+    CHECK(nft.is_in_lang({ 0 , {} }));
+    CHECK(nft.is_in_lang({ 1 , {} }));
+    CHECK(nft.is_in_lang({ 2 , {} }));
     CHECK(nft.is_in_lang({ { 0, 1 }, {} }));
     CHECK(nft.is_in_lang({ { 1, 0 }, {} }));
     CHECK(nft.is_in_lang({ { 2, 2, 2 }, {} }));
@@ -2788,7 +2788,7 @@ TEST_CASE("mata::nft:: create simple automata") {
 }
 
 TEST_CASE("mata::nft::print_to_mata()") {
-    Nft aut_big;
+    Nft aut_big{ Nft::with_levels(2, 9)};
     aut_big.initial = {1, 2};
     aut_big.delta.add(1, 'a', 2);
     aut_big.delta.add(1, 'a', 3);
@@ -2803,13 +2803,7 @@ TEST_CASE("mata::nft::print_to_mata()") {
     aut_big.delta.add(5, 'c', 3);
     aut_big.delta.add(7, 'a', 8);
     aut_big.final = {3};
-
-    std::string aut_big_mata = aut_big.print_to_mata();
-    // for parsing output of print_to_mata() we need to use IntAlphabet to get the same alphabet
-    IntAlphabet int_alph;
-    Nft aut_big_from_mata = builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(aut_big_mata))[0], &int_alph);
-
-    CHECK(are_equivalent(aut_big, aut_big_from_mata));
+    CHECK(are_equivalent(aut_big, nft::builder::parse_from_mata(aut_big.print_to_mata())));
 }
 
 TEST_CASE("mata::nft::Nft::trim() bug") {
@@ -3008,7 +3002,7 @@ TEST_CASE("mata::nft::Nft::get_one_level_aut") {
                 REPLACE_DONT_CARE(delta, inter, trg);\
 
     SECTION("level_cnt == 1") {
-        Nft aut(5, {0}, {3, 4});
+        Nft aut{ Nft::with_levels(1, 5, {0}, {3, 4}) };
         aut.delta.add(0, 0, 1);
         aut.delta.add(0, 1, 2);
         aut.delta.add(1, 0, 1);
@@ -3020,7 +3014,7 @@ TEST_CASE("mata::nft::Nft::get_one_level_aut") {
         aut.delta.add(4, 1, 2);
         aut.delta.add(4, DONT_CARE, 4);
 
-        Nft expected(5, {0}, {3, 4});
+        Nft expected{ Nft::with_levels(1, 5, {0}, {3, 4}) };
         expected.delta.add(0, 0, 1);
         expected.delta.add(0, 1, 2);
         expected.delta.add(1, 0, 1);
