@@ -526,7 +526,7 @@ void Nfa::print_to_mata(const std::string& filename, const Alphabet* alphabet) c
 }
 
 Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
-    Nfa digraph{num_of_states(), StateSet(initial), StateSet(final) };
+    Nfa digraph{num_of_states(), initial, final };
     // Add directed transitions for digraph.
     for (const Transition& transition: delta.transitions()) {
         // Directly try to add the transition. Finding out whether the transition is already in the digraph
@@ -713,8 +713,8 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& aut) {
 }
 
 Nfa Nfa::decode_utf8() const {
-    Nfa result{ this->num_of_states(), StateSet{this->initial}, StateSet{this->final} };
-    BoolVector used(this->num_of_states(), false);
+    Nfa result{ num_of_states(), { initial }, { final } };
+    BoolVector used(num_of_states(), false);
     std::stack<State> worklist;
 
     // Pushes a set of states to the worklist and marks them as used.
@@ -735,9 +735,9 @@ Nfa Nfa::decode_utf8() const {
     // For example, consider the sequences 0xC8 0x80 and 0xC8 0x88.
     // Based solely on the first byte (0xC8), we cannot determine which sequence
     // will result in the higher number.
-    auto add_to_state_post = [&](StatePost &state_post, const SymbolPost &symbol_post, const bool is_nondet) {
+    auto add_to_state_post = [&](StatePost &state_post, const SymbolPost& symbol_post, const bool is_nondet) {
         if (is_nondet) {
-            state_post.insert(std::move(symbol_post));
+            state_post.insert(symbol_post);
         } else {
             state_post.emplace_back(std::move(symbol_post));
         }

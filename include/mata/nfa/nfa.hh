@@ -78,9 +78,9 @@ public:
      *
      * @param[in] num_of_states Number of states for which to preallocate Delta.
      */
-    explicit Nfa(const unsigned long num_of_states, StateSet initial_states = {},
-                 StateSet final_states = {}, Alphabet* alphabet = nullptr)
-        : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet) {}
+    explicit Nfa(const size_t num_of_states, utils::SparseSet<State> initial_states = {},
+                 utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr)
+        : delta(num_of_states), initial(std::move(initial_states)), final(std::move(final_states)), alphabet(alphabet) {}
 
     /**
      * @brief Construct a new explicit NFA from other NFA.
