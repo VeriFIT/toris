@@ -27,7 +27,7 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
     }
 
     // a lambda for translating state names to identifiers
-    auto get_state_name = [&state_map, &aut](const std::string& str) {
+    auto get_state_name = [&](const std::string& str) {
         if (!state_map->contains(str)) {
             State state = aut.add_state();
             state_map->insert({str, state});
@@ -53,22 +53,17 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
         }
     }
 
-
     it = parsec.dict.find("Final");
-    if (parsec.dict.end() != it)
-    {
-        for (const auto& str : it->second)
-        {
+    if (parsec.dict.end() != it) {
+        for (const auto& str : it->second) {
             const State state = get_state_name(str);
             aut.final.insert(state);
         }
     }
 
     it = parsec.dict.find("Levels");
-    if (parsec.dict.end() != it)
-    {
-        for (const auto &str : it->second)
-        {
+    if (parsec.dict.end() != it) {
+        for (const auto &str : it->second) {
             std::stringstream ss(str);
             std::string level_str;
             try {
@@ -117,20 +112,15 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
         }
     }
 
-    for (const auto& body_line : parsec.body)
-    {
-        if (body_line.size() != 3)
-        {
+    for (const auto& body_line : parsec.body) {
+        if (body_line.size() != 3) {
             // clean up
             clean_up();
 
-            if (body_line.size() == 2)
-            {
+            if (body_line.size() == 2) {
                 throw std::runtime_error("Epsilon transitions not supported: " +
                                          std::to_string(body_line));
-            }
-            else
-            {
+            } else {
                 throw std::runtime_error("Invalid transition: " +
                                          std::to_string(body_line));
             }
@@ -179,16 +169,11 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
         aut.initial.insert(state);
     }
 
-    for (const auto& trans : inter_aut.transitions)
-    {
-        if (trans.second.children.size() != 2)
-        {
-            if (trans.second.children.size() == 1)
-            {
+    for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
+        if (formula_graph.children.size() != 2) {
+            if (formula_graph.children.size() == 1) {
                 throw std::runtime_error("Epsilon transitions not supported");
-            }
-            else
-            {
+            } else {
                 throw std::runtime_error("Invalid transition");
             }
         }
@@ -217,11 +202,7 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
         }
     } else {
         // we add all states in final_formula_nodes to final states
-        for (const auto& str : final_formula_nodes)
-        {
-            State state = get_state_name(str);
-            aut.final.insert(state);
-        }
+        for (const auto& str : final_formula_nodes) { aut.final.insert(get_state_name(str)); }
     }
 
     return aut;
@@ -269,8 +250,7 @@ Nft builder::parse_from_mata(std::istream& nft_stream) {
         throw std::runtime_error("The number of sections in the input file is '" + std::to_string(parsed.size())
             + "'. Required is '1'.\n");
     }
-    const std::string automaton_type{ parsed[0].type };
-    if (automaton_type.compare(0, nft_str.length(), nft_str) != 0) {
+    if (const std::string automaton_type{ parsed[0].type }; automaton_type.compare(0, nft_str.length(), nft_str) != 0) {
         throw std::runtime_error("The type of input automaton is '" + automaton_type + "'. Required is 'NFT'\n");
     }
     IntAlphabet alphabet;
