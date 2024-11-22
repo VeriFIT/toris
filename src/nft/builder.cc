@@ -91,16 +91,16 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
         }
     }
 
-    it = parsec.dict.find("LevelsCnt");
+    it = parsec.dict.find("LevelsNum");
     if (parsec.dict.end() != it) {
         if (it->second.empty()) {
-            throw std::runtime_error("LevelsCnt has to be specified.");
+            throw std::runtime_error("LevelsNum has to be specified.");
         }
         if (it->second.size() > 1) {
-            throw std::runtime_error("Only one LevelsCnt can be specified.");
+            throw std::runtime_error("Only one LevelsNum can be specified.");
         }
         try {
-            long level = std::stol(it->second[0]);
+            const long level = std::stol(it->second[0]);
             if (level < 0) {
                 throw std::runtime_error("Bad format of levels: level " + it->second[0] + " is out of range.");
             }

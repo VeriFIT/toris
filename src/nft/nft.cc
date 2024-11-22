@@ -187,8 +187,8 @@ void Nft::print_to_mata(std::ostream &output) const {
             }
         }
         output << std::endl;
-        output << "%LevelsCnt " << num_of_levels << std::endl;
     }
+    output << "%LevelsNum " << num_of_levels << std::endl;
 
     for (const Transition& trans: delta.transitions()) {
         output << "q" << trans.source << " " << trans.symbol << " q" << trans.target << std::endl;
