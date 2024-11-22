@@ -153,13 +153,12 @@ public:
      * Inserts a @p word into the NFT from a source state @p source to a target state @p target.
      * Creates new states along the path of the @p word.
      *
-     * If the length of @p word is less than @c num_of_levels, then the last symbol of @p word
-     * will form a transition going directly from the last inner state to @p target. The level
-     * of the state @p target must be 0 or greater than the level of the last inner state.
+     * If the length of @p word is less than @c num_of_levels, then the last symbol of @p word will form a transition
+     *  going directly from the last inner state to @p target.
      *
-     * @param source The source state where the word begins. It must already be a part of the transducer.
+     * @param source The source state where the word begins. @p source must already exist.
      * @param word The nonempty word to be inserted into the NFA.
-     * @param target The target state where the word ends.
+     * @param target The target state where the word ends. @p target must already exist.
      * @return The state @p target where the inserted @p word ends.
      */
     State insert_word(State source, const Word &word, State target);
@@ -171,7 +170,7 @@ public:
      * If the length of @p word is less than @c num_of_levels, then the last symbol of @p word
      *  will form a transition going directly from the last inner state to the newly created target.
      *
-     * @param source The source state where the word begins. It must already be a part of the transducer.
+     * @param source The source state where the word begins. @p source must already exist.
      * @param word The nonempty word to be inserted into the NFA.
      * @return The newly created target where the inserted word ends.
      */
@@ -186,9 +185,9 @@ public:
      * The vector @p word_parts_on_levels must have a size equal to @c num_of_levels.
      * Words shorter than the maximum word length are interpreted as words followed by a sequence of epsilons to match the maximum length.
      *
-     * @param source The source state where the word begins. This state must already exist in the transducer and must be of a level 0.
+     * @param source The source state where the word begins. @p source must already exist and be of a level 0.
      * @param word_parts_on_levels The vector of word parts, with each part corresponding to a different level.
-     * @param target The target state where the word ends.
+     * @param target The target state where the word ends. @p target must already exist and be of a level 0.
      * @return The state @p target where the inserted @p word_parts_on_levels ends.
      */
     State insert_word_by_parts(State source, const std::vector<Word>& word_parts_on_levels, State target);
@@ -202,7 +201,7 @@ public:
      * The vector @p word_parts_on_levels must have a size equal to @c num_of_levels.
      * Words shorter than the maximum word length are interpreted as words followed by a sequence of epsilons to match the maximum length.
      *
-     * @param source The source state where the word begins. This state must already exist in the transducer and must be of a level 0.
+     * @param source The source state where the word begins. @p source must already exist be of a level 0.
      * @param word_parts_on_levels The vector of word parts, with each part corresponding to a different level.
      * @return The newly created target where the inserted @p word_parts_on_levels ends.
      */
@@ -211,8 +210,10 @@ public:
     /**
     * Inserts identity transitions into the NFT.
     *
-    * @param state The state where the identity transition will be inserted. This serves as both the source and target state.
-    * @param symbol The vector of symbols used for the identity transition. Identity will be created for each symbol in the vector.
+    * @param state The state where the identity transition will be inserted. @p state server as both the source and
+    *  target state.
+    * @param symbols The vector of symbols used for the identity transition. Identity will be created for each symbol in
+    *  the vector.
     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
     * of @c DONT_CARE symbols.
@@ -222,13 +223,14 @@ public:
     /**
     * Inserts an identity transition into the NFT.
     *
-    * @param state The state where the identity transition will be inserted. This serves as both the source and target state.
+    * @param state The state where the identity transition will be inserted. @p state server as both the source and
+    *  target state.
     * @param symbol The symbol used for the identity transition.
     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
     * of @c DONT_CARE symbols.
     */
-    void insert_identity(const State state, const Symbol symbol, JumpMode jump_mode = JumpMode::RepeatSymbol);
+    void insert_identity(State state, Symbol symbol, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
     /**
      * @brief Clear the underlying NFT to a blank NFT.

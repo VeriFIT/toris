@@ -136,11 +136,10 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
             }
         }
 
-        State src_state = get_state_name(body_line[0]);
-        Symbol symbol = alphabet->translate_symb(body_line[1]);
-        State tgt_state = get_state_name(body_line[2]);
-
-        aut.delta.add(src_state, symbol, tgt_state);
+        const State source = get_state_name(body_line[0]);
+        const Symbol symbol = alphabet->translate_symb(body_line[1]);
+        const State target = get_state_name(body_line[2]);
+        aut.delta.add(source, symbol, target);
     }
 
     // do the dishes and take out garbage
@@ -176,7 +175,7 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 
     for (const auto& str : inter_aut.initial_formula.collect_node_names())
     {
-        State state = get_state_name(str);
+        const State state = get_state_name(str);
         aut.initial.insert(state);
     }
 
@@ -194,11 +193,11 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
             }
         }
 
-        State src_state = get_state_name(trans.first.name);
-        Symbol symbol = alphabet->translate_symb(trans.second.children[0].node.name);
-        State tgt_state = get_state_name(trans.second.children[1].node.name);
+        const State source = get_state_name(formula_node.name);
+        const Symbol symbol = alphabet->translate_symb(formula_graph.children[0].node.name);
+        const State target = get_state_name(formula_graph.children[1].node.name);
 
-        aut.delta.add(src_state, symbol, tgt_state);
+        aut.delta.add(source, symbol, target);
     }
 
     std::unordered_set<std::string> final_formula_nodes;
@@ -263,7 +262,7 @@ Nft builder::create_sigma_star_nft(const mata::Alphabet* alphabet, const size_t 
 
 Nft builder::parse_from_mata(std::istream& nft_stream) {
     const std::string nft_str = "NFT";
-    parser::Parsed parsed{ parser::parse_mf(nft_stream) };
+    const parser::Parsed parsed{ parser::parse_mf(nft_stream) };
     if (parsed.size() != 1) {
         throw std::runtime_error("The number of sections in the input file is '" + std::to_string(parsed.size())
             + "'. Required is '1'.\n");
@@ -298,7 +297,7 @@ Nft builder::parse_from_mata(const std::string& nft_in_mata) {
     return parse_from_mata(nft_stream);
 }
 
-Nft builder::create_from_nfa(const mata::nfa::Nfa& nfa, const size_t num_of_levels, std::optional<Symbol> next_level_symbol, const std::set<Symbol>& epsilons) {
+Nft builder::create_from_nfa(const mata::nfa::Nfa& nfa, const size_t num_of_levels, std::optional<Symbol> next_levels_symbol, const std::set<Symbol>& epsilons) {
     const Level num_of_additional_states_per_nfa_trans{ static_cast<Level>(num_of_levels) - 1 };
     Nft nft{};
     size_t nfa_num_of_states{ nfa.num_of_states() };
@@ -321,7 +320,7 @@ Nft builder::create_from_nfa(const mata::nfa::Nfa& nfa, const size_t num_of_leve
                     nft.levels[curr_nft_state] = level;
                     if (level != 0) {
                         nft.delta.add(curr_nft_state,
-                                      next_level_symbol.has_value() ? next_level_symbol.value() : symbol_post.symbol,
+                                      next_levels_symbol.has_value() ? next_levels_symbol.value() : symbol_post.symbol,
                                       nft_state);
                     } else {
                         nft.delta.add(curr_nft_state, symbol_post.symbol, nft_state);
@@ -341,7 +340,7 @@ Nft builder::create_from_nfa(const mata::nfa::Nfa& nfa, const size_t num_of_leve
                 }
                 nft.levels[curr_nft_state] = level;
                 nft.delta.add(curr_nft_state,
-                              next_level_symbol.has_value() ? next_level_symbol.value() : symbol_post.symbol,
+                              next_levels_symbol.has_value() ? next_levels_symbol.value() : symbol_post.symbol,
                               nft_target);
             }
         }
