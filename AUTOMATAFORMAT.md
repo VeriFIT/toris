@@ -1,6 +1,7 @@
 # The Mata file format for automata (.mata format)
 
-> **_NOTE:_** The Mata library currently supports only a subset of the whole format. Notably, the Mata library supports NFAs, but not AFAs nor transducers.
+> [!WARNING]
+> The Mata library currently supports only a subset of the whole format. Notably, the Mata library supports NFAs, but not AFAs nor transducers. The Mata library may also not support all the additional features described in the format, such as special formulas, tracks, etc.
 
 ## Top-level file structure
 * The format is **line**-based. Lines can be connected by `\`.
@@ -35,7 +36,9 @@ We categorise automata by the **alphabet type**, i.e., the representation of sym
 * Initial (final) states are defined by key-value line `%Initial"` (`%Final`) followed by an enumeration of states.
 
 ### AFA (Alternating finite automata)
-> **_NOTE:_** The Mata library currently does not support AFAs.
+
+> [!WARNING]
+> The Mata library currently does not support AFAs.
 
 * Transition lines are of the form `"<State> <Formula>"` representing the source state and the transition formula - a Boolean formula over symbol literals, states, and nodes.
 * Several lines starting with the same state mean the disjunciton of the formulae. No line for the state means false. 
@@ -95,7 +98,9 @@ q2 x & !y q3
 q [a-z] s
 ```
 ## Transducer
-> **_NOTE:_** The Mata library currently does not support transducers.
+
+> [!WARNING]
+> The Mata library currently does not support transducers.
 
 A transducer has named tracks, and it has a key-value line starting with `%Tracks`. We use `<lit>@x` to say that the `<lit>` belongs to the track `x`. We may also specify their names by a type-identifier or enumeration. An example:
 ```
