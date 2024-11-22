@@ -36,7 +36,7 @@ Nft create_single_word_nft(const std::vector<std::string>& word, Alphabet* alpha
 /**
  * Create automaton accepting only epsilon string.
  */
-Nft create_empty_string_nft();
+Nft create_empty_string_nft(size_t num_of_levels = DEFAULT_NUM_OF_LEVELS);
 
 /**
  * Create automaton accepting sigma star over the passed alphabet using DONT_CARE symbol.
@@ -104,11 +104,11 @@ Nft parse_from_mata(const std::filesystem::path& nft_file);
  * Create NFT from NFA.
  * @param nfa_state NFA to create NFT from.
  * @param num_of_levels Number of levels of NFT.
- * @param next_level_symbol Symbol to use on non-NFA levels. std::nullopt means using the same symbol on all levels.
+ * @param next_levels_symbol Symbol to use on non-NFA levels. std::nullopt means using the same symbol on all levels.
  * @param epsilons Which symbols handle as epsilons.
  * @return NFT representing @p nfa_state with @p num_of_levels number of levels.
  */
-Nft create_from_nfa(const mata::nfa::Nfa& nfa_state, size_t num_of_levels = 2, std::optional<Symbol> next_level_symbol = {}, const std::set<Symbol>& epsilons = { EPSILON });
+Nft create_from_nfa(const nfa::Nfa& nfa_state, size_t num_of_levels = DEFAULT_NUM_OF_LEVELS, std::optional<Symbol> next_levels_symbol = {}, const std::set<Symbol>& epsilons = { EPSILON });
 
 } // namespace mata::nft::builder.
 

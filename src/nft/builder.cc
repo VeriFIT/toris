@@ -244,8 +244,10 @@ Nft builder::create_single_word_nft(const std::vector<std::string>& word, mata::
     return Nft(mata::nfa::builder::create_single_word_nfa(word, alphabet));
 }
 
-Nft builder::create_empty_string_nft() {
-    return Nft(mata::nfa::builder::create_empty_string_nfa());
+Nft builder::create_empty_string_nft(const size_t num_of_levels) {
+    Nft nft{ nfa::builder::create_empty_string_nfa() };
+    nft.num_of_levels = num_of_levels;
+    return nft;
 }
 
 Nft builder::create_sigma_star_nft(const size_t num_of_levels) {
