@@ -49,8 +49,17 @@ class Levels: public std::vector<Level> {
 public:
     Levels& set(State state, Level level = DEFAULT_LEVEL);
     using super::vector;
-    Levels(const std::vector<Level>& levels): super(levels) {}
-    Levels(std::vector<Level>&& levels): super(std::move(levels)) {}
+    using super::operator=;
+    Levels(const std::vector<Level>& levels): super{ levels } {}
+    Levels(std::vector<Level>&& levels): super{ std::move(levels) } {}
+    Levels& operator=(const std::vector<Level>& levels) {
+        if (this != &levels) { super::operator=(levels); }
+        return *this;
+    }
+    Levels& operator=(std::vector<Level>&& levels) {
+        if (this != &levels) { super::operator=(std::move(levels)); }
+        return *this;
+    }
 
     /**
      * @brief Append @p levels_vector to the end of @c this.
