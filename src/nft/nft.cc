@@ -312,35 +312,32 @@ State Nft::add_state_with_level(const State state, const Level level) {
 }
 
 State Nft::insert_word(const State source, const Word &word, const State target) {
-    assert(0 < num_of_levels);
-    const size_t num_of_states_orig{ num_of_states() };
-    assert(source < num_of_states_orig);
-    assert(target < num_of_states_orig);
-    assert(levels[source] == levels[target]);
-
-    const State first_new_state = num_of_states_orig;
-    const State word_tgt = Nfa::insert_word(source, word, target);
-    const size_t num_of_states_after = num_of_states();
-    const Level src_lvl = levels[source];
-
-    Level lvl = (num_of_levels == 1 ) ? src_lvl : (src_lvl + 1) % static_cast<Level>(num_of_levels);
-    State state{ first_new_state };
-    for (; state < num_of_states_after; state++, lvl = (lvl + 1) % static_cast<Level>(num_of_levels)){
-        add_state_with_level(state, lvl);
+    // Ensure both states exist in the NFT.
+    add_state(std::max(source, target));
+    if (levels[source] != levels[target]) {
+        throw std::invalid_argument{ "Inserting word between source and target states with different levels." };
     }
 
-    assert(levels[word_tgt] == 0 || levels[num_of_states_after - 1] < levels[word_tgt]);
+    const State first_new_state = num_of_states();
+    const State word_target = Nfa::insert_word(source, word, target);
+    const size_t num_of_states_after = num_of_states();
+    const Level source_level = levels[source];
 
-    return word_tgt;
+    Level lvl = (num_of_levels == 1) ? source_level : (source_level + 1) % static_cast<Level>(num_of_levels);
+    for (State state{ first_new_state }; state < num_of_states_after;
+         ++state, lvl = (lvl + 1) % static_cast<Level>(num_of_levels)) { add_state_with_level(state, lvl); }
+
+    assert(levels[word_target] == 0 || levels[num_of_states_after - 1] < levels[word_target]);
+
+    return word_target;
 }
 
 State Nft::insert_word(const State source, const Word& word) {
-    assert(source < levels.size());
+    if (num_of_states() <= source) { add_state(source); }
     return insert_word(source, word, add_state_with_level(levels[source]));
 }
 
 State Nft::insert_word_by_parts(const State source, const std::vector<Word> &word_parts_on_levels, const State target) {
-    assert(0 < num_of_levels);
     assert(word_parts_on_levels.size() == num_of_levels);
     assert(source < num_of_states());
     assert(target < num_of_states());
