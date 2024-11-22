@@ -498,7 +498,7 @@ public:
      * @brief Get the maximum non-epsilon used symbol.
      */
     Symbol get_max_symbol() const;
-private:
+protected:
     std::vector<StatePost> state_posts_;
 }; // class Delta.
 
