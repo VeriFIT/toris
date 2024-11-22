@@ -1285,7 +1285,7 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 
     // Construct the minimized automaton using equivalence classes (BRP).
     assert(dfa_trimmed.initial.size() == 1);
-    Nfa result(brp.num_of_sets, StateSet{ brp.set_idx[*dfa_trimmed.initial.begin()] }, StateSet{});
+    Nfa result(brp.num_of_sets, { brp.set_idx[*dfa_trimmed.initial.begin()] }, {});
     for (size_t block_idx = 0; block_idx < brp.num_of_sets; ++block_idx) {
         const State q = brp.get_first(block_idx);
         if (dfa_trimmed.final.contains(q)) {

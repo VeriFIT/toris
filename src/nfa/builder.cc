@@ -232,7 +232,7 @@ Nfa builder::create_random_nfa_tabakov_vardi(const size_t num_of_states, const s
         throw std::runtime_error("Final state density must be in range (0, 1]");
     }
 
-    Nfa nfa{ num_of_states, StateSet{ 0 }, StateSet{ 0 }, new OnTheFlyAlphabet{} };
+    Nfa nfa{ num_of_states, { 0 }, { 0 }, new OnTheFlyAlphabet{} };
 
     // Initialize the random number generator
     std::random_device rd;  // Seed for the random number engine

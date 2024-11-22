@@ -72,7 +72,7 @@ public:
 /**
  * A class representing an NFT.
  */
-class Nft : public mata::nfa::Nfa {
+class Nft: public nfa::Nfa {
 public:
     /**
      * @brief Vector of levels giving each state a level in range from 0 to @c num_of_levels - 1.
@@ -98,7 +98,7 @@ public:
     explicit Nft(Delta delta = {}, utils::SparseSet<State> initial_states = {},
                  utils::SparseSet<State> final_states = {}, Levels levels = {}, const size_t num_of_levels = DEFAULT_NUM_OF_LEVELS,
                  Alphabet* alphabet = nullptr)
-        : mata::nfa::Nfa(std::move(delta), std::move(initial_states), std::move(final_states), alphabet), num_of_levels(num_of_levels) {
+        : Nfa(std::move(delta), std::move(initial_states), std::move(final_states), alphabet), num_of_levels(num_of_levels) {
         this->levels = levels.empty() ? Levels(num_of_states(), DEFAULT_LEVEL) : std::move(levels);
     }
     /**
@@ -106,10 +106,10 @@ public:
      *
      * @param[in] num_of_states Number of states for which to preallocate Delta.
      */
-    explicit Nft(const size_t num_of_states, StateSet initial_states = {},
-                 StateSet final_states = {}, Levels levels = {}, const size_t num_of_levels = DEFAULT_NUM_OF_LEVELS,
+    explicit Nft(const size_t num_of_states, utils::SparseSet<State> initial_states = {},
+                 utils::SparseSet<State> final_states = {}, Levels levels = {}, const size_t num_of_levels = DEFAULT_NUM_OF_LEVELS,
                  Alphabet* alphabet = nullptr)
-        : mata::nfa::Nfa(num_of_states, std::move(initial_states), std::move(final_states), alphabet),
+        : Nfa(num_of_states, std::move(initial_states), std::move(final_states), alphabet),
           num_of_levels(num_of_levels) {
         this->levels = levels.empty() ? Levels(num_of_states, DEFAULT_LEVEL) : std::move(levels);
     }
