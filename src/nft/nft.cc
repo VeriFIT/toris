@@ -401,6 +401,13 @@ State Nft::insert_word_by_parts(const State source, const std::vector<Word> &wor
    return insert_word_by_parts(source, word_parts_on_levels, add_state_with_level(levels[source]));
 }
 
+State Nft::add_transition(const State source, const std::vector<Symbol>& symbols, const State target) {
+    return insert_word(source, symbols, target);
+}
+State Nft::add_transition(const State source, const std::vector<Symbol>& symbols) {
+    return insert_word(source, symbols);
+}
+
 void Nft::insert_identity(const State state, const std::vector<Symbol> &symbols, const JumpMode jump_mode) {
     for (const Symbol symbol : symbols) {
         insert_identity(state, symbol, jump_mode);

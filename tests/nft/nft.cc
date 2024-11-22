@@ -4243,6 +4243,22 @@ TEST_CASE("mata::nft::Nft::insert_word()") {
             CHECK(are_equivalent(nft, expected));
         }
     }
+
+    SECTION("add_transition()") {
+        nft = Nft::with_levels(3);
+        nft.add_transition(0, { 'a', 'b', 'c' }, 1);
+        nft.add_transition(1, { 'd', 'e', 'f' }, 2);
+
+        expected = Nft::with_levels(3, {}, { 0, 0, 0, 1, 2, 1, 2 });
+        expected.delta.add(0, 'a', 3);
+        expected.delta.add(3, 'b', 4);
+        expected.delta.add(4, 'c', 1);
+        expected.delta.add(1, 'd', 5);
+        expected.delta.add(5, 'e', 6);
+        expected.delta.add(6, 'f', 2);
+
+        CHECK(are_equivalent(nft, expected));
+    }
 }
 
 TEST_CASE("mata::nft::Nft::insert_identity()") {

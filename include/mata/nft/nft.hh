@@ -195,6 +195,35 @@ public:
     State insert_word(State source, const Word &word);
 
     /**
+     * @brief Add a single NFT transition.
+     *
+     * The transition leads from a source state @p source to a target state @p target, creating new inner states for all
+     *  tapes.
+     *
+     * If the length of @p symbols is less than @c num_of_levels, then the last symbol of @p symbols will form a jump
+     *  transition going directly from the last inner state to @p target.
+     *
+     * @param source The source state where the NFT transition begins. @p source must already exist.
+     * @param symbols The nonempty set of symbols, one for each tape to be inserted into the NFT.
+     * @param target The target state where the NFT transition ends. @p target must already exist.
+     * @return The target state @p target.
+     */
+    State add_transition(State source, const std::vector<Symbol>& symbols, State target);
+
+    /**
+     * @brief Add a single NFT transition to the NFT from a source state @p source to a newly created target state,
+     *  creating new inner states for all tapes.
+     *
+     * If the length of @p symbols is less than @c num_of_levels, the last symbol of @p symbols
+     *  will form a transition going directly from the last inner state to the newly created target.
+     *
+     * @param source The source state where the transition begins. @p source must already exist.
+     * @param symbols The nonempty set of symbols, one for each tape to be inserted into the NFT.
+     * @return The target state @p target.
+     */
+    State add_transition(State source, const std::vector<Symbol>& symbols);
+
+    /**
      * @brief Inserts a word, which is created by interleaving parts from @p word_parts_on_levels, into the NFT
      *  from a source state @p source to a target state @p target, creating new states along the path of @p word.
      *
