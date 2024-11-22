@@ -50,7 +50,7 @@ constexpr Symbol EPSILON = mata::nfa::EPSILON;
 constexpr Symbol DONT_CARE = EPSILON - 1;
 
 constexpr Level DEFAULT_LEVEL{ 0 };
-constexpr Level DEFAULT_NUM_OF_LEVELS{ 1 };
+constexpr Level DEFAULT_NUM_OF_LEVELS{ 2 };
 
 } // namespace mata::nft.
 
