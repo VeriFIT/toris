@@ -227,7 +227,7 @@ Nfa builder::create_random_nfa_tabakov_vardi(const size_t num_of_states, const s
         // Maximum of num_of_states^2 unique transitions for one symbol can be created.
         throw std::runtime_error("Transition density must be in range [0, num_of_states]");
     }
-    if (final_state_density <= 0 || final_state_density > 1) {
+    if (final_state_density < 0 || final_state_density > 1) {
         // Maximum of num_of_states final states can be created.
         throw std::runtime_error("Final state density must be in range (0, 1]");
     }

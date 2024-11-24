@@ -265,11 +265,11 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
         CHECK_THROWS_AS(mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density), std::runtime_error);
     }
 
-    SECTION("Throw runtime_error. final_state_density = 0") {
+    SECTION("Throw runtime_error. final_state_density < 0") {
         num_of_states = 10;
         alphabet_size = 5;
         states_trans_ratio_per_symbol = 0.5;
-        final_state_density = 0;
+        final_state_density = static_cast<double>(-0.1);
 
         CHECK_THROWS_AS(mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density), std::runtime_error);
     }
