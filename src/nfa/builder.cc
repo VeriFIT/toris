@@ -244,7 +244,7 @@ Nfa builder::create_random_nfa_tabakov_vardi(const size_t num_of_states, const s
     std::shuffle(states.begin() + 1, states.end(), gen); // Starting from 1, because 0 is allways final state.
 
     // Create final states
-    const size_t num_of_final_states{ static_cast<size_t>(std::round(static_cast<float>(num_of_states) * final_state_density)) };
+    const size_t num_of_final_states{ static_cast<size_t>(std::round(static_cast<double>(num_of_states) * final_state_density)) };
     for (size_t i = 0; i < num_of_final_states; ++i) {
         nfa.final.insert(states[i]);
     }
@@ -254,7 +254,7 @@ Nfa builder::create_random_nfa_tabakov_vardi(const size_t num_of_states, const s
     std::iota(one_dimensional_transition_matrix.begin(), one_dimensional_transition_matrix.end(), 0);
 
     // Create transitions
-    const size_t num_of_transitions_per_symbol{ static_cast<size_t>(std::round(static_cast<float>(num_of_states) * states_trans_ratio_per_symbol)) };
+    const size_t num_of_transitions_per_symbol{ std::min(static_cast<size_t>(std::round(static_cast<double>(num_of_states) * states_trans_ratio_per_symbol)), one_dimensional_transition_matrix.size()) };
     for (Symbol symbol{ 0 }; symbol < alphabet_size; ++symbol) {
         std::shuffle(one_dimensional_transition_matrix.begin(), one_dimensional_transition_matrix.end(), gen);
         for (size_t i = 0; i < num_of_transitions_per_symbol; ++i) {
