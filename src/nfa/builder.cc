@@ -254,6 +254,8 @@ Nfa builder::create_random_nfa_tabakov_vardi(const size_t num_of_states, const s
     std::iota(one_dimensional_transition_matrix.begin(), one_dimensional_transition_matrix.end(), 0);
 
     // Create transitions
+    // Using std::min because, in some universe, casting and rounding might cause the number of transitions to exceed the number of possible transitions by 1
+    // and then an access to the non-existing element of one_dimensional_transition_matrix would occur.
     const size_t num_of_transitions_per_symbol{ std::min(static_cast<size_t>(std::round(static_cast<double>(num_of_states) * states_trans_ratio_per_symbol)), one_dimensional_transition_matrix.size()) };
     for (Symbol symbol{ 0 }; symbol < alphabet_size; ++symbol) {
         std::shuffle(one_dimensional_transition_matrix.begin(), one_dimensional_transition_matrix.end(), gen);
