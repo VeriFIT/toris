@@ -47,6 +47,7 @@ Nfa create_sigma_star_nfa(Alphabet* alphabet = new OnTheFlyAlphabet{});
 
 /**
  * Creates Tabakov-Vardi random NFA.
+ * The implementation is based on the paper "Experimental Evaluation of Classical Automata Constructions" by Tabakov and Vardi.
  *
  * @param num_of_states Number of states in the automaton.
  * @param alphabet_size Size of the alphabet.
