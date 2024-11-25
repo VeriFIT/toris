@@ -2,6 +2,7 @@
 
 #include <unordered_set>
 #include <fstream>
+#include <cmath>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -139,5 +140,146 @@ TEST_CASE("parse_from_mata()") {
             parsed.delta.contains(51, 'z', 42);
             CHECK(are_equivalent(parsed, nfa));
         }
+    }
+}
+
+TEST_CASE("Create Tabakov-Vardi NFA") {
+    size_t num_of_states;
+    size_t alphabet_size;
+    double states_trans_ratio_per_symbol;
+    double final_state_density;
+
+    SECTION("EMPTY") {
+        num_of_states = 0;
+        alphabet_size = 0;
+        states_trans_ratio_per_symbol = 0;
+        final_state_density = 0;
+
+        Nfa nfa = mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density);
+        CHECK(nfa.num_of_states() == 0);
+        CHECK(nfa.initial.size() == 0);
+        CHECK(nfa.final.size() == 0);
+        CHECK(nfa.delta.empty());
+    }
+
+    SECTION("10-5-0.5-0.5") {
+        num_of_states = 10;
+        alphabet_size = 5;
+        states_trans_ratio_per_symbol = 0.5;
+        final_state_density = 0.5;
+
+        Nfa nfa = mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density);
+        CHECK(nfa.num_of_states() == num_of_states);
+        CHECK(nfa.initial.size() == 1);
+        CHECK(nfa.final.size() == 5);
+        CHECK(nfa.delta.get_used_symbols().size() == alphabet_size);
+        CHECK(nfa.delta.num_of_transitions() == 25);
+    }
+
+    SECTION("Min final") {
+        num_of_states = 10;
+        alphabet_size = 5;
+        states_trans_ratio_per_symbol = 0.5;
+        final_state_density = 0.0001;
+
+        Nfa nfa = mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density);
+        CHECK(nfa.num_of_states() == num_of_states);
+        CHECK(nfa.initial.size() == 1);
+        CHECK(nfa.final.size() == 1);
+        CHECK(nfa.delta.get_used_symbols().size() == alphabet_size);
+        CHECK(nfa.delta.num_of_transitions() == 25);
+    }
+
+    SECTION("Max final") {
+        num_of_states = 10;
+        alphabet_size = 5;
+        states_trans_ratio_per_symbol = 0.5;
+        final_state_density = 1;
+
+        Nfa nfa = mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density);
+        CHECK(nfa.num_of_states() == num_of_states);
+        CHECK(nfa.initial.size() == 1);
+        CHECK(nfa.final.size() == num_of_states);
+        CHECK(nfa.delta.get_used_symbols().size() == alphabet_size);
+        CHECK(nfa.delta.num_of_transitions() == 25);
+    }
+
+    SECTION("Min transitions") {
+        num_of_states = 10;
+        alphabet_size = 5;
+        states_trans_ratio_per_symbol = 0;
+        final_state_density = 0.5;
+
+        Nfa nfa = mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density);
+        CHECK(nfa.num_of_states() == num_of_states);
+        CHECK(nfa.initial.size() == 1);
+        CHECK(nfa.final.size() == 5);
+        CHECK(nfa.delta.get_used_symbols().size() == 0);
+        CHECK(nfa.delta.num_of_transitions() == 0);
+    }
+
+    SECTION("Max transitions") {
+        num_of_states = 10;
+        alphabet_size = 5;
+        states_trans_ratio_per_symbol = 10;
+        final_state_density = 0.5;
+
+        Nfa nfa = mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density);
+        CHECK(nfa.num_of_states() == num_of_states);
+        CHECK(nfa.initial.size() == 1);
+        CHECK(nfa.final.size() == 5);
+        CHECK(nfa.delta.get_used_symbols().size() == alphabet_size);
+        CHECK(nfa.delta.num_of_transitions() == 500);
+    }
+
+    SECTION("BIG") {
+        num_of_states = 200;
+        alphabet_size = 100;
+        states_trans_ratio_per_symbol = 5;
+        final_state_density = 1;
+
+        Nfa nfa = mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density);
+        CHECK(nfa.num_of_states() == num_of_states);
+        CHECK(nfa.initial.size() == 1);
+        CHECK(nfa.final.size() == num_of_states);
+        CHECK(nfa.delta.get_used_symbols().size() == alphabet_size);
+        CHECK(nfa.delta.num_of_transitions() == 100000);
+
+    }
+
+    SECTION("Throw runtime_error. transition_density < 0") {
+        num_of_states = 10;
+        alphabet_size = 5;
+        states_trans_ratio_per_symbol = static_cast<double>(-0.1);
+        final_state_density = 0.5;
+
+        CHECK_THROWS_AS(mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density), std::runtime_error);
+    }
+
+    SECTION("Throw runtime_error. transition_density > num_of_states") {
+        num_of_states = 10;
+        alphabet_size = 5;
+        states_trans_ratio_per_symbol = 11;
+        final_state_density = 0.5;
+
+        CHECK_THROWS_AS(mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density), std::runtime_error);
+    }
+
+    SECTION("Throw runtime_error. final_state_density < 0") {
+        num_of_states = 10;
+        alphabet_size = 5;
+        states_trans_ratio_per_symbol = 0.5;
+        final_state_density = static_cast<double>(-0.1);
+
+        CHECK_THROWS_AS(mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density), std::runtime_error);
+    }
+
+    SECTION("Throw runtime_error. final_state_density > 1") {
+        num_of_states = 10;
+        alphabet_size = 5;
+        states_trans_ratio_per_symbol = 0.5;
+        final_state_density = static_cast<double>(1.1);
+
+        CHECK_THROWS_AS(mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density), std::runtime_error);
     }
 }

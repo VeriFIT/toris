@@ -4,6 +4,8 @@
 #include "mata/parser/mintermization.hh"
 
 #include <fstream>
+#include <random>
+#include <cmath>
 
 using namespace mata::nfa;
 using mata::nfa::Nfa;
@@ -213,6 +215,55 @@ Nfa builder::create_sigma_star_nfa(mata::Alphabet* alphabet) {
     Nfa nfa{ 1, StateSet{ 0 }, StateSet{ 0 }, alphabet };
     for (const mata::Symbol& symbol : alphabet->get_alphabet_symbols()) {
         nfa.delta.add(0, symbol, 0);
+    }
+    return nfa;
+}
+
+Nfa builder::create_random_nfa_tabakov_vardi(const size_t num_of_states, const size_t alphabet_size, const double states_trans_ratio_per_symbol, const double final_state_density) {
+    if (num_of_states == 0) {
+        return Nfa();
+    }
+    if (states_trans_ratio_per_symbol < 0 || static_cast<size_t>(states_trans_ratio_per_symbol) > num_of_states) {
+        // Maximum of num_of_states^2 unique transitions for one symbol can be created.
+        throw std::runtime_error("Transition density must be in range [0, num_of_states]");
+    }
+    if (final_state_density < 0 || final_state_density > 1) {
+        // Maximum of num_of_states final states can be created.
+        throw std::runtime_error("Final state density must be in range (0, 1]");
+    }
+
+    Nfa nfa{ num_of_states, StateSet{ 0 }, StateSet{ 0 }, new OnTheFlyAlphabet{} };
+
+    // Initialize the random number generator
+    std::random_device rd;  // Seed for the random number engine
+    std::mt19937 gen(rd()); // Mersenne Twister engine
+
+    // Unique final state generator
+    std::vector<State> states(num_of_states);
+    std::iota(states.begin(), states.end(), 0);
+    std::shuffle(states.begin() + 1, states.end(), gen); // Starting from 1, because 0 is allways final state.
+
+    // Create final states
+    const size_t num_of_final_states{ static_cast<size_t>(std::round(static_cast<double>(num_of_states) * final_state_density)) };
+    for (size_t i = 0; i < num_of_final_states; ++i) {
+        nfa.final.insert(states[i]);
+    }
+
+    // Unique transition generator
+    std::vector<State> one_dimensional_transition_matrix(num_of_states * num_of_states);
+    std::iota(one_dimensional_transition_matrix.begin(), one_dimensional_transition_matrix.end(), 0);
+
+    // Create transitions
+    // Using std::min because, in some universe, casting and rounding might cause the number of transitions to exceed the number of possible transitions by 1
+    // and then an access to the non-existing element of one_dimensional_transition_matrix would occur.
+    const size_t num_of_transitions_per_symbol{ std::min(static_cast<size_t>(std::round(static_cast<double>(num_of_states) * states_trans_ratio_per_symbol)), one_dimensional_transition_matrix.size()) };
+    for (Symbol symbol{ 0 }; symbol < alphabet_size; ++symbol) {
+        std::shuffle(one_dimensional_transition_matrix.begin(), one_dimensional_transition_matrix.end(), gen);
+        for (size_t i = 0; i < num_of_transitions_per_symbol; ++i) {
+            const State source{ one_dimensional_transition_matrix[i] / num_of_states };
+            const State target{ one_dimensional_transition_matrix[i] % num_of_states };
+            nfa.delta.add(source, symbol, target);
+        }
     }
     return nfa;
 }
