@@ -136,14 +136,11 @@ namespace {
             working_pair = worklist[worklist_size - 1];
             worklist.pop_back();
 
-            for (size_t x = 0; x < alph_syms.size(); x++) {
-                auto symbol_q_ = reverted_nfa.delta[working_pair.second].find(alph_syms[x]);
-                if (symbol_q_ == reverted_nfa.delta[working_pair.second].end()) {
-                    continue;
-                } 
-                for (State q: (*symbol_q_).targets.to_vector()) {
-                    if (--matrix[index_fn(x, working_pair.first, q, alph_syms.size(), no_states)] == 0) {
-                        auto symbol_p_ = reverted_nfa.delta[working_pair.first].find(alph_syms[x]);
+            for (SymbolPost symbol_q_ : reverted_nfa.delta[working_pair.second]) {
+                Symbol active_sym = symbol_q_.symbol;
+                for (State q: symbol_q_.targets.to_vector()) {
+                    if (--matrix[index_fn(index_map[active_sym], working_pair.first, q, alph_syms.size(), no_states)] == 0) {
+                        auto symbol_p_ = reverted_nfa.delta[working_pair.first].find(active_sym);
                         if (symbol_p_ == reverted_nfa.delta[working_pair.first].end()) {
                             continue;
                         }
