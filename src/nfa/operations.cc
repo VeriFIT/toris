@@ -62,11 +62,6 @@ namespace {
         return alph + x * alph_size + y * alph_size * no_states;
     }
 
-    typedef struct{
-        size_t index;
-        bool used;
-    }Used_symbol;
-
     Simlib::Util::BinaryRelation compute_iny_direct_simulation(const Nfa& aut) {
         // ! Preprocessing
         Nfa reverted_nfa;
@@ -81,19 +76,21 @@ namespace {
         size_t no_states = aut.num_of_states();
         size_t matrix_size = no_states * no_states * alph_syms.size();
 
-        std::vector<int> matrix (matrix_size, 0);
-        std::unordered_map<Symbol, Used_symbol> index_map;
-
-        for (size_t x = 0; x < alph_syms.size(); x++){ // Helper hash table, that matches symbols to matrix indexes (x)
-            Used_symbol data;
-            data.used = 0;
-            data.index = x;
-            index_map.insert({alph_syms[x], data});
-        }
+        std::vector<unsigned> matrix (matrix_size, 0); // Stores the value of cnt()
+        std::vector<unsigned> index_map {}; // Associates every Symbol with unique value
+        std::vector<bool> usage_map (alph_syms.size(), false); // Storing usage of Symbols
 
         result_sim_tmp.resize(no_states);
         for (size_t i = 0; i < no_states; i++){
             result_sim_tmp[i].resize(no_states, true);
+        }
+
+        // TODO this is very memory inefficient
+        for (size_t x = 0; x < alph_syms.size(); x++){ // Indexing every Symbol with an number
+            if (index_map.size() <= alph_syms[x]){
+                index_map.resize(alph_syms[x] + 1 ,0);
+            }
+            index_map[alph_syms[x]] = x;
         }
 
         reverted_nfa = revert(aut); // Reverted NFA
@@ -109,40 +106,25 @@ namespace {
                         result_sim_tmp[p][q] = false;
                     }
                 }
-                auto symbol_q = aut.delta[q].begin();
-                for (size_t x = 0; x < alph_syms.size(); x++) {
-
-                    size_t p_size;
+                for (SymbolPost symbol_q : aut.delta[q]) {
                     size_t q_size;
-                    size_t x_index;
-                    if (symbol_q == aut.delta[q].end()){ // If we searched all symbols in q
-                        break;
-                    }
+                    Symbol active_sym = symbol_q.symbol; // Get the active symbol
+                    usage_map[index_map[active_sym]] = true; // Mark the symbol as used
 
-                    // Helper variables
-                    Symbol active_sym = (*symbol_q).symbol; // get the active symbol
-                    auto x_index_it = index_map.find(active_sym); // get the index of the symbol
-                    x_index = (*x_index_it).second.index;
-                    (*x_index_it).second.used = 1;
-
-                    // Compute_lenght
-                    q_size = (*symbol_q).num_of_targets();
-                    // Store_into_matrix
-                    matrix[index_fn(x_index, p, q, alph_syms.size(), no_states)] = q_size;
-                std::advance(symbol_q, 1);
+                    q_size = symbol_q.num_of_targets(); // Compute lenght and store it
+                    matrix[index_fn(index_map[active_sym], p, q, alph_syms.size(), no_states)] = q_size;
                 }
                 for(SymbolPost active_sym : aut.delta[p]){
-                    auto x_index_it = index_map.find(active_sym.symbol); // get the index of the symbol
-                    if ((*x_index_it).second.used == 0){
+                    bool is_present = usage_map[index_map[active_sym.symbol]]; // get the index of the symbol
+                    if (is_present == false){
                         if (result_sim_tmp[p][q] != false) {
                                 worklist.push_back(std::pair(p,q)); // worklist append
                                 result_sim_tmp[p][q] = false;
                         }
                     }
                 }
-                for (std::pair<const Symbol, Used_symbol>& index : index_map){
-                    index.second.used = 0;
-                }
+                usage_map.clear(); // Reset the usage map
+                usage_map.resize(alph_syms.size(), false);
             }
         }
         // ! End of initial refinement
