@@ -6,8 +6,10 @@
 #include <optional>
 #include <iterator>
 #include <fstream>
+#include <string>
 
 // MATA headers
+#include "mata/alphabet.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/algorithms.hh"
@@ -468,13 +470,13 @@ void Nfa::print_to_dot(const std::string& filename) const {
     print_to_dot(output);
 }
 
-std::string Nfa::print_to_mata() const {
+std::string Nfa::print_to_mata(const Alphabet* alphabet) const {
     std::stringstream output;
-    print_to_mata(output);
+    print_to_mata(output, alphabet);
     return output.str();
 }
 
-void Nfa::print_to_mata(std::ostream &output) const {
+void Nfa::print_to_mata(std::ostream &output, const Alphabet* alphabet) const {
     output << "@NFA-explicit" << std::endl
            << "%Alphabet-auto" << std::endl;
            // TODO should be this, but we cannot parse %Alphabet-numbers yet
@@ -497,16 +499,18 @@ void Nfa::print_to_mata(std::ostream &output) const {
     }
 
     for (const Transition& trans: delta.transitions()) {
-        output << "q" << trans.source << " " << trans.symbol << " q" << trans.target << std::endl;
+        output << "q" << trans.source << " "
+        << ((alphabet != nullptr) ? alphabet->reverse_translate_symbol(trans.symbol) : std::to_string(trans.symbol))
+        << " q" << trans.target << std::endl;
     }
 }
 
-void Nfa::print_to_mata(const std::string& filename) const {
+void Nfa::print_to_mata(const std::string& filename, const Alphabet* alphabet) const {
     std::ofstream output(filename);
     if (!output) {
         throw std::ios_base::failure("Failed to open file: " + filename);
     }
-    print_to_mata(output);
+    print_to_mata(output, alphabet);
 }
 
 Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
