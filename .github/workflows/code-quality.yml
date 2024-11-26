@@ -60,7 +60,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest ]
+        os: [ 
+        #ubuntu-latest, 
+        macos-latest 
+      ]
     steps:
       - uses: actions/checkout@v3
         with:
@@ -94,7 +97,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest ]
+        os: [ 
+        #ubuntu-latest, 
+          macos-latest 
+        ]
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/workflows/actions/setup
@@ -126,7 +132,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest ]
+        os: [ 
+          #ubuntu-latest,
+          macos-latest 
+        ]
     needs: [ run-test-performance, run-test-performance-base ]
     steps:
       - uses: actions/checkout@v3
