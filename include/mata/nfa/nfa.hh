@@ -299,29 +299,29 @@ public:
      *
      * If you need to parse the automaton again, use IntAlphabet in construct()
      *
+     * @param[in] alphabet If specified, translates the symbols to their symbol names in the @p alphabet.
      * @return automaton in mata format
-     * TODO handle alphabet of the automaton, currently we print the exact value of the symbols
      */
-    std::string print_to_mata() const;
+    std::string print_to_mata(const Alphabet* alphabet = nullptr) const;
 
     /**
      * @brief Prints the automaton to the output stream in mata format
      *
      * If you need to parse the automaton again, use IntAlphabet in construct()
      *
-     * TODO handle alphabet of the automaton, currently we print the exact value of the symbols
+     * @param[in] alphabet If specified, translates the symbols to their symbol names in the @p alphabet.
      */
-    void print_to_mata(std::ostream &output) const;
+    void print_to_mata(std::ostream &output, const Alphabet* alphabet = nullptr) const;
 
     /**
      * @brief Prints the automaton to the file in mata format
      *
      * If you need to parse the automaton again, use IntAlphabet in construct()
      *
-     * TODO handle alphabet of the automaton, currently we print the exact value of the symbols
+     * @param[in] alphabet If specified, translates the symbols to their symbol names in the @p alphabet.
      * @param filename Name of the file to print the automaton to
      */
-    void print_to_mata(const std::string& filename) const;
+    void print_to_mata(const std::string& filename, const Alphabet* alphabet = nullptr) const;
 
     // TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
     StateSet post(const StateSet& states, const Symbol& symbol) const;
