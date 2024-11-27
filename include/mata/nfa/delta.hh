@@ -166,7 +166,7 @@ public:
         StatePost::const_iterator symbol_post_it_{}; ///< Current symbol post iterator to iterate over.
         /// End symbol post iterator which is no longer iterated over (one after the last symbol post iterated over or
         ///  end()).
-        StatePost::const_iterator symbol_post_end_{}; 
+        StatePost::const_iterator symbol_post_end_{};
     }; // class Moves.
 
     /**
@@ -221,7 +221,7 @@ public:
     /// Const all moves iterator.
     const_iterator(const StatePost& state_post);
     /// Construct iterator from @p symbol_post_it (including) to @p symbol_post_it_end (excluding).
-    const_iterator(const StatePost& state_post, StatePost::const_iterator symbol_post_it, 
+    const_iterator(const StatePost& state_post, StatePost::const_iterator symbol_post_it,
                    StatePost::const_iterator symbol_post_it_end);
     const_iterator(const const_iterator& other) noexcept = default;
     const_iterator(const_iterator&&) = default;
@@ -490,9 +490,9 @@ public:
 
     utils::OrdVector<Symbol> get_used_symbols_vec() const;
     std::set<Symbol> get_used_symbols_set() const;
-    utils::SparseSet<Symbol> get_used_symbols_sps() const;
-    std::vector<bool> get_used_symbols_bv() const;
-    BoolVector get_used_symbols_chv() const;
+    utils::SparseSet<Symbol> get_used_symbols_sps(bool &epsilon) const;
+    std::vector<bool> get_used_symbols_bv(bool &epsilon) const;
+    BoolVector get_used_symbols_chv(bool &epsilon) const;
 
     /**
      * @brief Get the maximum non-epsilon used symbol.

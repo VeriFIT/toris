@@ -6,6 +6,7 @@
 #include "mata/utils/sparse-set.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/delta.hh"
+#include "mata/utils/ord-vector.hh"
 
 
 #include <algorithm>
@@ -523,41 +524,23 @@ void Delta::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
 }
 
 OrdVector<Symbol> Delta::get_used_symbols() const {
-    //TODO: look at the variants in profiling (there are tests in tests-nfa-profiling.cc),
-    // for instance figure out why NumberPredicate and OrdVector are slow,
-    // try also with _STATIC_DATA_STRUCTURES_, it changes things.
+    // BENCHMARKING
 
-    //below are different variant, with different data structures for accumulating symbols,
-    //that then must be converted to an OrdVector
-    //measured are times with "mata::nfa::get_used_symbols speed, harder", "[.profiling]" now on line 104 of nfa-profiling.cc
-
-    //WITH VECTOR (4.434 s)
+    // TEST 1 - VECTOR
     return get_used_symbols_vec();
 
-    //WITH SET (26.5 s)
-    //auto from_set = get_used_symbols_set();
-    //return utils::OrdVector<Symbol> (from_set .begin(),from_set.end());
 
-    //WITH NUMBER PREDICATE (4.857s) (NP removed)
-    //return utils::OrdVector(get_used_symbols_np().get_elements());
-
-    //WITH SPARSE SET (haven't tried)
-    //return utils::OrdVector<State>(get_used_symbols_sps());
-
-    //WITH BOOL VECTOR (error !!!!!!!):
-    //return utils::OrdVector<Symbol>(utils::NumberPredicate<Symbol>(get_used_symbols_bv()));
-
-    //WITH BOOL VECTOR (1.9s): (The fastest, it seems.)
-    // However, it will try to allocate a vector indexed by the symbols. If there are epsilons in the automaton,
-    //  for example, the bool vector implementation will implode.
-    // std::vector<bool> bv{ get_used_symbols_bv() };
-    // utils::OrdVector<Symbol> ov{};
-    // const size_t bv_size{ bv.size() };
-    // for (Symbol i{ 0 }; i < bv_size; ++i) { if (bv[i]) { ov.push_back(i); } }
+    // TEST2 - SPARSE SET
+    // bool epsilons = false;
+    // utils::OrdVector<Symbol> ov{get_used_symbols_sps(epsilons)};
+    // if (epsilons) {
+    //     ov.push_back(EPSILON);
+    // }
     // return ov;
 
-    ///WITH BOOL VECTOR, DIFFERENT VARIANT? (1.9s):
-    // std::vector<bool> bv = get_used_symbols_bv();
+    // TEST 3 - std::vector<bool> with reserve
+    // bool epsilon = false;
+    // std::vector<bool> bv = get_used_symbols_bv(epsilon);
     // utils::OrdVector<Symbol> ov{};
     // ov.reserve(static_cast<size_t>(std::count(bv.begin(), bv.end(), true)));
     // const size_t bv_size{ bv.size() };
@@ -566,16 +549,23 @@ OrdVector<Symbol> Delta::get_used_symbols() const {
     //         ov.push_back(i);
     //     }
     // }
+    // if (epsilon) {
+    //     ov.push_back(EPSILON);
+    // }
     // return ov;
 
-    //WITH CHAR VECTOR (should be the fastest, haven't tried in this branch):
-    //BEWARE: failing in one noodlificatoin test ("Simple automata -- epsilon result") ... strange
-    // BoolVector chv = get_used_symbols_chv();
+    // TEST 4 - std::vector<uint8_t> (BoolVector) without reserve
+    // bool epsilon = false;
+    // BoolVector chv = get_used_symbols_chv(epsilon);
     // utils::OrdVector<Symbol> ov;
-    // for(Symbol i = 0;i<chv.size();i++)
+    // for(Symbol i = 0;i<chv.size();i++) {
     //    if (chv[i]) {
     //        ov.push_back(i);
     //    }
+    // }
+    // if (epsilon) {
+    //     ov.push_back(EPSILON);
+    // }
     // return ov;
 }
 
@@ -619,7 +609,7 @@ std::set<Symbol> Delta::get_used_symbols_set() const {
 
 // returns symbols appearing in Delta, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
-mata::utils::SparseSet<Symbol> Delta::get_used_symbols_sps() const {
+mata::utils::SparseSet<Symbol> Delta::get_used_symbols_sps(bool &epsilon) const {
 #ifdef _STATIC_STRUCTURES_
     //static seems to speed things up a little
     static utils::SparseSet<Symbol> symbols(64);
@@ -630,6 +620,10 @@ mata::utils::SparseSet<Symbol> Delta::get_used_symbols_sps() const {
     //symbols.dont_track_elements();
     for (const StatePost& state_post: state_posts_) {
         for (const SymbolPost & symbol_post: state_post) {
+            if (symbol_post.symbol == EPSILON) {
+                epsilon = true;
+                continue;
+            }
             symbols.insert(symbol_post.symbol);
         }
     }
@@ -639,7 +633,7 @@ mata::utils::SparseSet<Symbol> Delta::get_used_symbols_sps() const {
 
 // returns symbols appearing in Delta, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
-std::vector<bool> Delta::get_used_symbols_bv() const {
+std::vector<bool> Delta::get_used_symbols_bv(bool &epsilon) const {
 #ifdef _STATIC_STRUCTURES_
     //static seems to speed things up a little
     static std::vector<bool> symbols(64, false);
@@ -650,6 +644,10 @@ std::vector<bool> Delta::get_used_symbols_bv() const {
     //symbols.dont_track_elements();
     for (const StatePost& state_post: state_posts_) {
         for (const SymbolPost& symbol_post: state_post) {
+            if (symbol_post.symbol == EPSILON) {
+                epsilon = true;
+                continue;
+            }
             const size_t capacity{ symbol_post.symbol + 1 };
             if (symbols.size() < capacity) {
                 symbols.resize(capacity);
@@ -660,7 +658,7 @@ std::vector<bool> Delta::get_used_symbols_bv() const {
     return symbols;
 }
 
-mata::BoolVector Delta::get_used_symbols_chv() const {
+mata::BoolVector Delta::get_used_symbols_chv(bool &epsilon) const {
 #ifdef _STATIC_STRUCTURES_
     //static seems to speed things up a little
     static BoolVector symbols(64,false);
@@ -671,6 +669,10 @@ mata::BoolVector Delta::get_used_symbols_chv() const {
     //symbols.dont_track_elements();
     for (const StatePost& state_post: state_posts_) {
         for (const SymbolPost& symbol_post: state_post) {
+            if (symbol_post.symbol == EPSILON) {
+                epsilon = true;
+                continue;
+            }
             const size_t capacity{ symbol_post.symbol + 1 };
             if (symbols.size() < capacity) {
                 symbols.resize(capacity * 2);

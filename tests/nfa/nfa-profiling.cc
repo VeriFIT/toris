@@ -92,9 +92,10 @@ TEST_CASE("mata::nfa::get_used_symbols speed, harder", "[.profiling]") {
 
 TEST_CASE("mata::nfa::get_used_symbols_bv speed, harder", "[.profiling]") {
     Nfa A;
+    bool epsilon = false;
     create_nfa(&A, "((.*){10})*");
     for (int i = 0; i < 2000000; i++) {
-        A.delta.get_used_symbols_bv();
+        A.delta.get_used_symbols_bv(epsilon);
     }
 }
 
@@ -116,9 +117,10 @@ TEST_CASE("mata::nfa::get_used_symbols_set speed, harder", "[.profiling]") {
 
 TEST_CASE("mata::nfa::get_used_symbols_sps speed, harder", "[.profiling]") {
     Nfa A;
+    bool epsilon = false;
     create_nfa(&A, "((.*){10})*");
     for (int i = 0; i < 2000000; i++) {
-        A.delta.get_used_symbols_sps();
+        A.delta.get_used_symbols_sps(epsilon);
     }
 }
 
