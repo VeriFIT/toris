@@ -950,6 +950,516 @@ Nfa mata::nfa::minimize(
     return algo(aut);
 }
 
+// Anonymouse namespace for the Hopcroft minimization algorithm.
+namespace {
+
+class DeltaArray {
+public:
+    std::vector<State> tail;    // The source state of each transition.
+    std::vector<Symbol> label;  // The label of each transition.
+    std::vector<State> head;    // The target state of each transition.
+private:
+    std::vector<size_t> elems;  // The transitions in the order of the source states.
+    std::vector<size_t> first;  // The first transition of each source state.
+    std::vector<size_t> end;    // The transition after the last transition of each source state.
+
+public:
+    DeltaArray(const Delta &delta)
+    : tail(), label(), head(), elems(), first(), end() {
+        const size_t num_of_states = delta.num_of_states();
+        const size_t num_of_transitions = delta.num_of_transitions();
+
+        // Reserve space for the transitions.
+        tail.resize(num_of_transitions);
+        label.resize(num_of_transitions);
+        head.resize(num_of_transitions);
+        elems.resize(num_of_transitions);
+        first.resize(num_of_states);
+        end.resize(num_of_states);
+
+        // Fill the transitions.
+        size_t t = 0;
+        for (State s = 0; s < num_of_states; ++s) {
+            first[s] = t;
+            for (const SymbolPost &symbol_post : delta[s]) {
+                for (const State target : symbol_post.targets) {
+                    elems[t] = t;
+                    tail[t] = s;
+                    label[t] = symbol_post.symbol;
+                    head[t] = target;
+                    ++t;
+                }
+            }
+            end[s] = t;
+        }
+    }
+
+    DeltaArray(const DeltaArray &other)
+        : tail(other.tail), label(other.label), head(other.head),
+          elems(other.elems), first(other.first), end(other.end) {}
+
+    DeltaArray(DeltaArray &&other) noexcept
+        : tail(std::move(other.tail)), label(std::move(other.label)), head(std::move(other.head)),
+          elems(std::move(other.elems)), first(std::move(other.first)), end(std::move(other.end)) {}
+
+    /**
+     * @brief Get the number of states and transitions.
+     */
+    inline size_t num_of_states() const { return first.size(); }
+
+    /**
+     * @brief Get the number of transitions.
+     */
+    inline size_t num_of_transitions() const { return elems.size(); }
+
+    /**
+     * @brief Get the transitions.
+     */
+    inline std::vector<size_t> transitions() const { return elems; }
+
+    /**
+     * @brief Get the source state of the transition.
+     */
+    inline size_t get_first(State s) const { return first[s]; }
+
+    /**
+     * @brief Get the transition after the last transition of the source state.
+     */
+    inline size_t get_end(State s) const { return end[s]; }
+
+    /**
+     * @brief Get the transition at the given index.
+     */
+    inline size_t get_elem(size_t i) const { return elems[i]; }
+
+    /**
+     * @brief Construct a new DeltaArray grouped by the target states.
+     */
+    DeltaArray group_by_target() const {
+        DeltaArray result(*this);
+
+        // Count the number of transitions for each target.
+        std::vector<size_t> count(num_of_states(), 0);
+        for (size_t i = 0; i < num_of_transitions(); ++i) {
+            ++count[head[i]];
+        }
+
+        // Determine the first and end indices of the transitions for each target.
+        result.first[0] = 0;
+        result.end[0] = count[0];
+        for (size_t i = 1; i < num_of_states(); ++i) {
+            result.first[i] = result.end[i - 1];
+            result.end[i] = result.first[i] + count[i];
+        }
+
+        // Group the transitions.
+        std::vector<size_t> next{ result.end };
+        for (size_t i = 0; i < num_of_transitions(); ++i) {
+            const size_t pos = --next[head[i]];
+            result.elems[pos] = elems[i];
+        }
+
+        return result;
+    }
+
+    void print_debug() const {
+        std::cout << "DELTA FIRST: ";
+        for (size_t q = 0; q < num_of_states(); ++q) {
+            std::cout << q << ":" << first[q] << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "DELTA END: ";
+        for (size_t q = 0; q < num_of_states(); ++q) {
+            std::cout << q << ":" << end[q] << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "DELTA ELEMS: ";
+        for (size_t i = 0; i < num_of_transitions(); ++i) {
+            std::cout << i << ":" << elems[i] << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "DELTA TRANS: ";
+        for (size_t i = 0; i < num_of_transitions(); ++i) {
+            std::cout << i << ":(" << tail[i] << "," << label[i] << "," << head[i] << ") ";
+        }
+        std::cout << std::endl;
+    }
+
+};
+
+template <typename T>
+class RefinablePartition {
+public:
+    static_assert(std::is_unsigned<T>::value, "T must be an unsigned type.");
+    static const T ELEM_NOT_FOUND = std::numeric_limits<T>::max();
+    static const size_t NO_SPLIT = std::numeric_limits<size_t>::max();
+    size_t sets;                // The name of the last added set.
+
+private:
+    std::vector<T> elems;       // Contains all elements in such an order that the elements of the same set are contiguous.
+    std::vector<T> loc;         // Contains the location of each element in the elems vector.
+    std::vector<size_t> sidx;   // Contains the set index of each element.
+    std::vector<size_t> first;  // Contains the index of the first element of each set in the elems vector.
+    std::vector<size_t> end;    // Contains the index after the last element of each set in the elems vector.
+    std::vector<size_t> mid;    // Contains the index after the last element of the first half of the set in the elems vector.
+
+public:
+    /**
+     * @brief Construct a new Refinable Partition object
+     *
+     * @param n The number of elements.
+     */
+    RefinablePartition(const size_t n) : sets(1), elems(n), loc(n), sidx(n), first(n), end(n), mid(n) {
+        first[0] = mid[0] = 0;
+        end[0] = n;
+        for (T e = 0; e < n; ++e) {
+            elems[e] = loc[e] = e;
+            sidx[e] = 0;
+        }
+    }
+
+    /**
+     * @brief Construct a new Refinable Partition object from the transition function.
+     *  The elements are gouped in an ascending order of the labels.
+     *
+     * @param delta The transition function.
+     */
+    RefinablePartition(const DeltaArray &delta)
+        : sets(0), elems(), loc(), sidx(), first(), end(), mid() {
+        sets = 0;
+        size_t n = 0;
+        std::vector<size_t> sizes;
+        std::unordered_map<Symbol, size_t> idx;
+
+        // Count the number of elements and the number of sets.
+        for (const auto &t : delta.transitions()) {
+            const Symbol a = delta.label[t];
+            if (idx.find(a) == idx.end()) {
+                idx[a] = sets++;
+                sizes.push_back(1);
+            } else {
+                sizes[idx[a]]++;
+            }
+            n++;
+        }
+
+        // Initialize the partition.
+        elems.resize(n);
+        loc.resize(n);
+        sidx.resize(n);
+        first.resize(n);
+        end.resize(n);
+        mid.resize(n);
+
+        // Compute set indices.
+        first[0] = 0;
+        end[0] = sizes[0];
+        mid[0] = end[0];
+        for (size_t i = 1; i < sets; ++i) {
+            first[i] = end[i - 1];
+            end[i] = first[i] + sizes[i];
+            mid[i] = end[i];
+        }
+
+        // Fill the sets from the back.
+        // Mid, decremented before use, is used as an index for the next element.
+        for (const auto &t : delta.transitions()) {
+            const Symbol a = delta.label[t];
+            const size_t i = idx[a];
+            const size_t l = mid[i] - 1;
+            mid[i] = l;
+            elems[l] = t;
+            loc[t] = l;
+            sidx[t] = i;
+        }
+    }
+
+    RefinablePartition(const RefinablePartition &other)
+        : elems(other.elems), loc(other.loc), sidx(other.sidx),
+          first(other.first), end(other.end), mid(other.mid), sets(other.sets) {}
+
+    RefinablePartition(RefinablePartition &&other) noexcept
+        : elems(std::move(other.elems)), loc(std::move(other.loc)), sidx(std::move(other.sidx)),
+          first(std::move(other.first)), end(std::move(other.end)), mid(std::move(other.mid)), sets(other.sets) {}
+
+    /**
+     * @brief Get the size of the set
+     *
+     * @param s The set index.
+     * @return The size of the set.
+     */
+    inline size_t size(size_t s) const { return end[s] - first[s]; }
+
+    /**
+     * @brief Get the set index of the element.
+     *
+     * @param e The element.
+     * @return The set index of the element.
+     */
+    inline size_t set(T e) const { return sidx[e]; }
+
+    /**
+     * @brief Get the first element of the set.
+     *
+     * @param s The set index.
+     * @return The first element of the set.
+     */
+    inline T get_first(const size_t s) const {
+        // if (first[s] >= end[s]) { return ELEM_NOT_FOUND; }
+        return elems[first[s]];
+     }
+
+    /**
+     * @brief Get the next element of the set.
+     *
+     * @param e The element.
+     * @return The next element of the set.
+     */
+    inline T get_next(const T e) const {
+        if (loc[e] + 1 >= end[sidx[e]]) { return ELEM_NOT_FOUND; }
+        return elems[loc[e] + 1];
+    }
+
+    /**
+     * @brief Mark the element. And move it to the first half of the set.
+     *
+     * @param e The element.
+     */
+    void mark(const T e) {
+        const size_t s = sidx[e];
+        const size_t l = loc[e];
+        const size_t m = mid[s];
+        if (l >= m) {
+            elems[l] = elems[m];
+            loc[elems[l]] = l;
+            elems[m] = e;
+            loc[e] = m;
+            mid[s] = m + 1;
+        }
+    }
+
+    /**
+     * @brief Split the set into two sets according to the marked elements (the mid).
+     *  The first set name remains the same.
+     *
+     * @param s The set index.
+     * @return The new set index.
+     */
+    size_t split(const size_t s) {
+        if (mid[s] == end[s]) { mid[s] = first[s]; }
+        if (mid[s] == first[s]) {
+            return NO_SPLIT;
+        } else {
+            first[sets] = first[s];
+            mid[sets] = first[s];
+            end[sets] = mid[s];
+            first[s] = mid[s];
+            for (size_t l = first[sets]; l < end[sets]; ++l) {
+                sidx[elems[l]] = sets;
+            }
+            return sets++;
+        }
+    }
+
+    /**
+     * @brief Test if the set has no marked elements.
+     *
+     * @param s The set index.
+     * @return True if the set has no marked elements, false otherwise.
+     */
+    bool no_marks(const size_t s) const { return mid[s] == first[s]; }
+
+    void print_debug() {
+        std::cout << "REFINABLE SETS: " << sets << std::endl;
+
+        std::cout << "REFINABLE ELEMS: ";
+        for (size_t i = 0; i < elems.size(); ++i) {
+            std::cout << i << ":" << elems[i] << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "REFINABLE LOCS: ";
+        for (size_t i = 0; i < loc.size(); ++i) {
+            std::cout << i << ":" << loc[i] << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "REFINABLE SIDS: ";
+        for (size_t i = 0; i < sidx.size(); ++i) {
+            std::cout << i << ":" << sidx[i] << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "REFINABLE FIRST: ";
+        for (size_t i = 0; i < first.size(); ++i) {
+            std::cout << i << ":" << first[i] << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "REFINABLE END: ";
+        for (size_t i = 0; i < end.size(); ++i) {
+            std::cout << i << ":" << end[i] << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "REFINABLE MID: ";
+        for (size_t i = 0; i < mid.size(); ++i) {
+            std::cout << i << ":" << mid[i] << " ";
+        }
+        std::cout << std::endl;
+    }
+};
+}
+
+
+Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& aut) {
+    assert(aut.is_deterministic());
+    assert(aut.get_useful_states().size() == aut.num_of_states());
+    DeltaArray delta(aut.delta);
+
+    // std::cout << "DELTA: " << std::endl;
+    // delta.print_debug();
+    // std::cout << std::endl;
+    DeltaArray in_trs(delta.group_by_target());
+    // std::cout << "IN DELTA: " << std::endl;
+    // in_trs.print_debug();
+    // std::cout << std::endl;
+
+    RefinablePartition<State> BRP(aut.num_of_states());
+    RefinablePartition<size_t> TRP(delta);
+    std::stack<size_t> unready_spls;
+    std::stack<size_t> touched_blocks;
+
+    // std::cout << "BRP: " << std::endl;
+    // BRP.print_debug();
+    // std::cout << std::endl;
+    // std::cout << "TRP: " << std::endl;
+    // TRP.print_debug();
+    // std::cout << std::endl;
+
+    // Split the block.
+    auto split_block = [&](size_t b) {
+        std::stack<size_t> touched_spls;
+        size_t b_prime = BRP.split(b);
+        if (b_prime == RefinablePartition<size_t>::NO_SPLIT) {
+            return;
+        }
+        if (BRP.size(b) < BRP.size(b_prime)) {
+            b_prime = b;
+        }
+        for (State q = BRP.get_first(b_prime); q != RefinablePartition<State>::ELEM_NOT_FOUND; q = BRP.get_next(q)) {
+            for (size_t t = in_trs.get_first(q); t != in_trs.get_end(q); ++t) {
+                const size_t p = TRP.set(in_trs.get_elem(t));
+                if (TRP.no_marks(p)) {
+                    touched_spls.push(p);
+                }
+                TRP.mark(in_trs.get_elem(t));
+            }
+        }
+        while (!touched_spls.empty()) {
+            const size_t p = touched_spls.top();
+            touched_spls.pop();
+            const size_t p_prime = TRP.split(p);
+            if (p_prime != RefinablePartition<size_t>::NO_SPLIT) {
+                unready_spls.push(p_prime);
+            }
+        }
+    };
+
+    // auto set_debug_print = [] (const std::stack<size_t> &s, const std::string &name) {
+    //     std::stack<size_t> s_copy{ s };
+    //     std::cout << name << ": ";
+    //     while (!s_copy.empty()) {
+    //         std::cout << s_copy.top() << " ";
+    //         s_copy.pop();
+    //     }
+    //     std::cout << std::endl;
+    // };
+
+    auto to_nfa = [&] (const RefinablePartition<State> &BRP, const RefinablePartition<size_t> &TRP) {
+        assert(aut.initial.size() == 1);
+        Nfa result(BRP.sets, StateSet{ BRP.set(*aut.initial.begin()) }, StateSet{});
+        for (size_t p = 0; p < BRP.sets; ++p) {
+            const State q = BRP.get_first(p);
+            if (aut.final.contains(q)) {
+                result.final.insert(p);
+            }
+            StatePost &mut_post = result.delta.mutable_state_post(p);
+            for (const SymbolPost &symbol_post : aut.delta[q]) {
+                assert(symbol_post.targets.size() == 1);
+                const State target = BRP.set(*symbol_post.targets.begin());
+                mut_post.push_back(SymbolPost{ symbol_post.symbol, StateSet{ target } });
+            }
+        }
+        return result;
+    };
+
+    // Main loop.
+    for (size_t p = 0; p < TRP.sets; ++p) {
+        unready_spls.push(p);
+    }
+    for (const State q : aut.final) {
+        BRP.mark(q);
+    }
+    split_block(0);
+    // size_t iteration = 0;
+    while (!unready_spls.empty()) {
+        // std::cout << "ITERATION: " << iteration << std::endl;
+        // std::cout << std::endl;
+        // BRP.print_debug();
+        // std::cout << std::endl;
+        // TRP.print_debug();
+        // std::cout << std::endl;
+        // set_debug_print(unready_spls, "UNREADY SPLITS");
+        // std::cout << std::endl;
+        // ++iteration;
+        const size_t p = unready_spls.top();
+        unready_spls.pop();
+        for (size_t t = TRP.get_first(p); t != RefinablePartition<size_t>::ELEM_NOT_FOUND; t = TRP.get_next(t)) {
+            const State q = delta.tail[t];
+            const size_t b_prime = BRP.set(q);
+            if (BRP.no_marks(b_prime)) {
+                touched_blocks.push(b_prime);
+            }
+            BRP.mark(q);
+        }
+        // set_debug_print(touched_blocks, "TOUCHED BLOCKS");
+        // std::cout << std::endl;
+        while (!touched_blocks.empty()) {
+            const size_t b = touched_blocks.top();
+            touched_blocks.pop();
+            split_block(b);
+        }
+    }
+
+    // std::cout << "FINAL: " << std::endl;
+    // BRP.print_debug();
+    // std::cout << std::endl;
+
+    return to_nfa(BRP, TRP);
+    // Construct the minimized automaton.
+    // assert(aut.initial.size() == 1);
+    // Nfa result(BRP.sets, StateSet{ BRP.set(*aut.initial.begin()) }, StateSet{});
+    // for (size_t p = 0; p < BRP.sets; ++p) {
+    //     const State q = BRP.get_first(p);
+    //     if (aut.final.contains(q)) {
+    //         result.final.insert(p);
+    //     }
+    //     StatePost &mut_post = result.delta.mutable_state_post(p);
+    //     for (const SymbolPost &symbol_post : aut.delta[q]) {
+    //         assert(symbol_post.targets.size() == 1);
+    //         const State target = BRP.set(*symbol_post.targets.begin());
+    //         mut_post.push_back(SymbolPost{ symbol_post.symbol, StateSet{ target } });
+    //     }
+    // }
+
+    // return result;
+}
+
+
 Nfa mata::nfa::intersection(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State, State>, State>  *prod_map) {
 
     auto both_final = [&](const State lhs_state,const State rhs_state) {

@@ -33,6 +33,14 @@ namespace mata::nfa::algorithms {
 Nfa minimize_brzozowski(const Nfa& aut);
 
 /**
+ * Hopcroft minimization of automata. Based on the algorithm from the paper:
+ * "Efficient Minimization of DFAs With Partial Transition Functions" by Antti Valmari and Petri Lehtinen.
+ * @param[in] aut Deterministic automaton without useless states. Perform trimming before calling this function.
+ * @return Minimized deterministic automaton.
+ */
+Nfa minimize_hopcroft(const Nfa& aut);
+
+/**
  * Complement implemented by determization, adding sink state and making automaton complete. Then it adds final states
  *  which were non final in the original automaton.
  * @param[in] aut Automaton to be complemented.
