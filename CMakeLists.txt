@@ -11,6 +11,11 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 option(MATA_WERROR "Warnings should be handled as errors" OFF)
 option(MATA_ENABLE_COVERAGE "Build with coverage compiler flags" OFF)
 
+# For the case of WASM build we need to add -pthread option
+if (EMSCRIPTEN)
+    add_compile_options(-pthread)
+endif()
+
 # Only do these if this is the main project, and not if it is included through add_subdirectory
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     # Store compile commands into 'build/compile_commands.json', which are needed, beside others, for linters.

@@ -34,6 +34,11 @@ set_target_properties(libmata PROPERTIES
 
 target_include_directories(libmata PUBLIC "${PROJECT_SOURCE_DIR}/include/")
 
+# For the case of WASM build we need to link with pthread
+if (EMSCRIPTEN)
+	target_link_libraries(libmata PRIVATE pthread)
+endif()
+
 target_link_libraries(libmata PUBLIC cudd simlib)
 target_link_libraries(libmata PRIVATE re2)
 
