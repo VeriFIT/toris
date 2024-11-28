@@ -1203,10 +1203,11 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& aut) {
 
     std::stack<size_t> unready_spls;
     std::stack<size_t> touched_blocks;
+    std::stack<size_t> touched_spls;
 
     // Split the block.
     auto split_block = [&](size_t b) {
-        std::stack<size_t> touched_spls;
+        assert(touched_spls.empty());
         size_t b_prime = BRP.split(b);
         if (b_prime == RefinablePartition<size_t>::NO_SPLIT) {
             return;
