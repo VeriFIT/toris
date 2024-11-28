@@ -952,144 +952,6 @@ Nfa mata::nfa::minimize(
 
 // Anonymouse namespace for the Hopcroft minimization algorithm.
 namespace {
-
-class DeltaArray {
-public:
-    std::vector<State> tail;    // The source state of each transition.
-    std::vector<Symbol> label;  // The label of each transition.
-    std::vector<State> head;    // The target state of each transition.
-private:
-    std::vector<size_t> elems;  // The transitions in the order of the source states.
-    std::vector<size_t> first;  // The first transition of each source state.
-    std::vector<size_t> end;    // The transition after the last transition of each source state.
-
-public:
-    DeltaArray(const Delta &delta)
-    : tail(), label(), head(), elems(), first(), end() {
-        const size_t num_of_states = delta.num_of_states();
-        const size_t num_of_transitions = delta.num_of_transitions();
-
-        // Reserve space for the transitions.
-        tail.resize(num_of_transitions);
-        label.resize(num_of_transitions);
-        head.resize(num_of_transitions);
-        elems.resize(num_of_transitions);
-        first.resize(num_of_states);
-        end.resize(num_of_states);
-
-        // Fill the transitions.
-        size_t t = 0;
-        for (State s = 0; s < num_of_states; ++s) {
-            first[s] = t;
-            for (const SymbolPost &symbol_post : delta[s]) {
-                for (const State target : symbol_post.targets) {
-                    elems[t] = t;
-                    tail[t] = s;
-                    label[t] = symbol_post.symbol;
-                    head[t] = target;
-                    ++t;
-                }
-            }
-            end[s] = t;
-        }
-    }
-
-    DeltaArray(const DeltaArray &other)
-        : tail(other.tail), label(other.label), head(other.head),
-          elems(other.elems), first(other.first), end(other.end) {}
-
-    DeltaArray(DeltaArray &&other) noexcept
-        : tail(std::move(other.tail)), label(std::move(other.label)), head(std::move(other.head)),
-          elems(std::move(other.elems)), first(std::move(other.first)), end(std::move(other.end)) {}
-
-    /**
-     * @brief Get the number of states and transitions.
-     */
-    inline size_t num_of_states() const { return first.size(); }
-
-    /**
-     * @brief Get the number of transitions.
-     */
-    inline size_t num_of_transitions() const { return elems.size(); }
-
-    /**
-     * @brief Get the transitions.
-     */
-    inline std::vector<size_t> transitions() const { return elems; }
-
-    /**
-     * @brief Get the source state of the transition.
-     */
-    inline size_t get_first(State s) const { return first[s]; }
-
-    /**
-     * @brief Get the transition after the last transition of the source state.
-     */
-    inline size_t get_end(State s) const { return end[s]; }
-
-    /**
-     * @brief Get the transition at the given index.
-     */
-    inline size_t get_elem(size_t i) const { return elems[i]; }
-
-    /**
-     * @brief Construct a new DeltaArray grouped by the target states.
-     */
-    DeltaArray group_by_target() const {
-        DeltaArray result(*this);
-
-        // Count the number of transitions for each target.
-        std::vector<size_t> count(num_of_states(), 0);
-        for (size_t i = 0; i < num_of_transitions(); ++i) {
-            ++count[head[i]];
-        }
-
-        // Determine the first and end indices of the transitions for each target.
-        result.first[0] = 0;
-        result.end[0] = count[0];
-        for (size_t i = 1; i < num_of_states(); ++i) {
-            result.first[i] = result.end[i - 1];
-            result.end[i] = result.first[i] + count[i];
-        }
-
-        // Group the transitions.
-        std::vector<size_t> next{ result.end };
-        for (size_t i = 0; i < num_of_transitions(); ++i) {
-            const size_t pos = --next[head[i]];
-            result.elems[pos] = elems[i];
-        }
-
-        return result;
-    }
-
-    void print_debug() const {
-        std::cout << "DELTA FIRST: ";
-        for (size_t q = 0; q < num_of_states(); ++q) {
-            std::cout << q << ":" << first[q] << " ";
-        }
-        std::cout << std::endl;
-
-        std::cout << "DELTA END: ";
-        for (size_t q = 0; q < num_of_states(); ++q) {
-            std::cout << q << ":" << end[q] << " ";
-        }
-        std::cout << std::endl;
-
-        std::cout << "DELTA ELEMS: ";
-        for (size_t i = 0; i < num_of_transitions(); ++i) {
-            std::cout << i << ":" << elems[i] << " ";
-        }
-        std::cout << std::endl;
-
-        std::cout << "DELTA TRANS: ";
-        for (size_t i = 0; i < num_of_transitions(); ++i) {
-            std::cout << i << ":(" << tail[i] << "," << label[i] << "," << head[i] << ") ";
-        }
-        std::cout << std::endl;
-    }
-
-};
-
 template <typename T>
 class RefinablePartition {
 public:
@@ -1127,7 +989,7 @@ public:
      *
      * @param delta The transition function.
      */
-    RefinablePartition(const DeltaArray &delta)
+    RefinablePartition(const Delta &delta)
         : sets(0), elems(), loc(), sidx(), first(), end(), mid() {
         sets = 0;
         size_t n = 0;
@@ -1136,7 +998,7 @@ public:
 
         // Count the number of elements and the number of sets.
         for (const auto &t : delta.transitions()) {
-            const Symbol a = delta.label[t];
+            const Symbol a = t.symbol;
             if (idx.find(a) == idx.end()) {
                 idx[a] = sets++;
                 sizes.push_back(1);
@@ -1166,14 +1028,16 @@ public:
 
         // Fill the sets from the back.
         // Mid, decremented before use, is used as an index for the next element.
+        size_t t_idx = 0;
         for (const auto &t : delta.transitions()) {
-            const Symbol a = delta.label[t];
+            const Symbol a = t.symbol;
             const size_t i = idx[a];
             const size_t l = mid[i] - 1;
             mid[i] = l;
-            elems[l] = t;
-            loc[t] = l;
-            sidx[t] = i;
+            elems[l] = t_idx;
+            loc[t_idx] = l;
+            sidx[t_idx] = i;
+            t_idx++;
         }
     }
 
@@ -1192,6 +1056,11 @@ public:
      * @return The size of the set.
      */
     inline size_t size(size_t s) const { return end[s] - first[s]; }
+
+    inline size_t length() const { return elems.size(); }
+
+
+    inline size_t get_loc(T e) const { return loc[e]; }
 
     /**
      * @brief Get the set index of the element.
@@ -1316,29 +1185,24 @@ public:
 
 
 Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& aut) {
+    if (aut.delta.num_of_transitions() == 0) { return Nfa{ aut }; }
     assert(aut.is_deterministic());
     assert(aut.get_useful_states().size() == aut.num_of_states());
-    DeltaArray delta(aut.delta);
-
-    // std::cout << "DELTA: " << std::endl;
-    // delta.print_debug();
-    // std::cout << std::endl;
-    DeltaArray in_trs(delta.group_by_target());
-    // std::cout << "IN DELTA: " << std::endl;
-    // in_trs.print_debug();
-    // std::cout << std::endl;
 
     RefinablePartition<State> BRP(aut.num_of_states());
-    RefinablePartition<size_t> TRP(delta);
+    RefinablePartition<size_t> TRP(aut.delta);
+
+    std::vector<State> trans_source_map(TRP.length());
+    std::vector<std::vector<size_t>> incomming_trans_ids(BRP.length(), std::vector<size_t>());
+    size_t trans_id = 0;
+    for (const auto &t : aut.delta.transitions()) {
+        trans_source_map[trans_id] = t.source;
+        incomming_trans_ids[t.target].push_back(trans_id);
+        ++trans_id;
+    }
+
     std::stack<size_t> unready_spls;
     std::stack<size_t> touched_blocks;
-
-    // std::cout << "BRP: " << std::endl;
-    // BRP.print_debug();
-    // std::cout << std::endl;
-    // std::cout << "TRP: " << std::endl;
-    // TRP.print_debug();
-    // std::cout << std::endl;
 
     // Split the block.
     auto split_block = [&](size_t b) {
@@ -1351,12 +1215,12 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& aut) {
             b_prime = b;
         }
         for (State q = BRP.get_first(b_prime); q != RefinablePartition<State>::ELEM_NOT_FOUND; q = BRP.get_next(q)) {
-            for (size_t t = in_trs.get_first(q); t != in_trs.get_end(q); ++t) {
-                const size_t p = TRP.set(in_trs.get_elem(t));
+            for (const size_t t : incomming_trans_ids[q]) {
+                const size_t p = TRP.set(t);
                 if (TRP.no_marks(p)) {
                     touched_spls.push(p);
                 }
-                TRP.mark(in_trs.get_elem(t));
+                TRP.mark(t);
             }
         }
         while (!touched_spls.empty()) {
@@ -1369,34 +1233,6 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& aut) {
         }
     };
 
-    // auto set_debug_print = [] (const std::stack<size_t> &s, const std::string &name) {
-    //     std::stack<size_t> s_copy{ s };
-    //     std::cout << name << ": ";
-    //     while (!s_copy.empty()) {
-    //         std::cout << s_copy.top() << " ";
-    //         s_copy.pop();
-    //     }
-    //     std::cout << std::endl;
-    // };
-
-    auto to_nfa = [&] (const RefinablePartition<State> &BRP, const RefinablePartition<size_t> &TRP) {
-        assert(aut.initial.size() == 1);
-        Nfa result(BRP.sets, StateSet{ BRP.set(*aut.initial.begin()) }, StateSet{});
-        for (size_t p = 0; p < BRP.sets; ++p) {
-            const State q = BRP.get_first(p);
-            if (aut.final.contains(q)) {
-                result.final.insert(p);
-            }
-            StatePost &mut_post = result.delta.mutable_state_post(p);
-            for (const SymbolPost &symbol_post : aut.delta[q]) {
-                assert(symbol_post.targets.size() == 1);
-                const State target = BRP.set(*symbol_post.targets.begin());
-                mut_post.push_back(SymbolPost{ symbol_post.symbol, StateSet{ target } });
-            }
-        }
-        return result;
-    };
-
     // Main loop.
     for (size_t p = 0; p < TRP.sets; ++p) {
         unready_spls.push(p);
@@ -1405,29 +1241,17 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& aut) {
         BRP.mark(q);
     }
     split_block(0);
-    // size_t iteration = 0;
     while (!unready_spls.empty()) {
-        // std::cout << "ITERATION: " << iteration << std::endl;
-        // std::cout << std::endl;
-        // BRP.print_debug();
-        // std::cout << std::endl;
-        // TRP.print_debug();
-        // std::cout << std::endl;
-        // set_debug_print(unready_spls, "UNREADY SPLITS");
-        // std::cout << std::endl;
-        // ++iteration;
         const size_t p = unready_spls.top();
         unready_spls.pop();
         for (size_t t = TRP.get_first(p); t != RefinablePartition<size_t>::ELEM_NOT_FOUND; t = TRP.get_next(t)) {
-            const State q = delta.tail[t];
+            const State q = trans_source_map[t];
             const size_t b_prime = BRP.set(q);
             if (BRP.no_marks(b_prime)) {
                 touched_blocks.push(b_prime);
             }
             BRP.mark(q);
         }
-        // set_debug_print(touched_blocks, "TOUCHED BLOCKS");
-        // std::cout << std::endl;
         while (!touched_blocks.empty()) {
             const size_t b = touched_blocks.top();
             touched_blocks.pop();
@@ -1435,28 +1259,23 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& aut) {
         }
     }
 
-    // std::cout << "FINAL: " << std::endl;
-    // BRP.print_debug();
-    // std::cout << std::endl;
-
-    return to_nfa(BRP, TRP);
     // Construct the minimized automaton.
-    // assert(aut.initial.size() == 1);
-    // Nfa result(BRP.sets, StateSet{ BRP.set(*aut.initial.begin()) }, StateSet{});
-    // for (size_t p = 0; p < BRP.sets; ++p) {
-    //     const State q = BRP.get_first(p);
-    //     if (aut.final.contains(q)) {
-    //         result.final.insert(p);
-    //     }
-    //     StatePost &mut_post = result.delta.mutable_state_post(p);
-    //     for (const SymbolPost &symbol_post : aut.delta[q]) {
-    //         assert(symbol_post.targets.size() == 1);
-    //         const State target = BRP.set(*symbol_post.targets.begin());
-    //         mut_post.push_back(SymbolPost{ symbol_post.symbol, StateSet{ target } });
-    //     }
-    // }
+    assert(aut.initial.size() == 1);
+    Nfa result(BRP.sets, StateSet{ BRP.set(*aut.initial.begin()) }, StateSet{});
+    for (size_t p = 0; p < BRP.sets; ++p) {
+        const State q = BRP.get_first(p);
+        if (aut.final.contains(q)) {
+            result.final.insert(p);
+        }
+        StatePost &mut_post = result.delta.mutable_state_post(p);
+        for (const SymbolPost &symbol_post : aut.delta[q]) {
+            assert(symbol_post.targets.size() == 1);
+            const State target = BRP.set(*symbol_post.targets.begin());
+            mut_post.push_back(SymbolPost{ symbol_post.symbol, StateSet{ target } });
+        }
+    }
 
-    // return result;
+    return result;
 }
 
 
