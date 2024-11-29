@@ -108,7 +108,7 @@ public:
 		}
 
 		if (elem)
-			--elem->counter_;
+			--elem->refcount_;
 	}
 
 	template <class Deleter>
