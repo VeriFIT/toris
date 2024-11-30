@@ -980,7 +980,7 @@ public:
      * @param n The number of states.
      */
     RefinablePartition(const size_t num_of_states)
-        : num_of_sets(1), elems(num_of_states), location(num_of_states), set_idx(num_of_states),
+        : num_of_sets(1), set_idx(num_of_states), elems(num_of_states), location(num_of_states),
           first(num_of_states), end(num_of_states), mid(num_of_states) {
         // Initially, all states are in the same equivalence class.
         first[0] = mid[0] = 0;
@@ -998,7 +998,7 @@ public:
      * @param delta The transition function.
      */
     RefinablePartition(const Delta &delta)
-        : num_of_sets(0), elems(), location(), set_idx(), first(), end(), mid() {
+        : num_of_sets(0), set_idx(), elems(), location(), first(), end(), mid() {
         size_t num_of_transitions = 0;
         std::vector<size_t> counts;
         std::unordered_map<Symbol, size_t> symbol_map;
@@ -1051,11 +1051,11 @@ public:
     }
 
     RefinablePartition(const RefinablePartition &other)
-        : elems(other.elems), location(other.location), set_idx(other.set_idx),
+        : elems(other.elems), set_idx(other.set_idx), location(other.location),
           first(other.first), end(other.end), mid(other.mid), num_of_sets(other.num_of_sets) {}
 
     RefinablePartition(RefinablePartition &&other) noexcept
-        : elems(std::move(other.elems)), location(std::move(other.location)), set_idx(std::move(other.set_idx)),
+        : elems(std::move(other.elems)), set_idx(std::move(other.set_idx)), location(std::move(other.location)),
           first(std::move(other.first)), end(std::move(other.end)), mid(std::move(other.mid)), num_of_sets(other.num_of_sets) {}
 
 

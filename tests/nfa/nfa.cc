@@ -2858,6 +2858,97 @@ TEST_CASE("mata::nfa::reduce_size_by_simulation()")
     }
 }
 
+TEST_CASE("mata::nfa::algorithms::minimize_hopcroft()") {
+    SECTION("empty automaton") {
+        Nfa aut;
+        Nfa result = minimize_hopcroft(aut);
+        CHECK(result.is_lang_empty());
+    }
+
+    SECTION("one state") {
+        Nfa aut(1);
+        aut.initial.insert(0);
+        aut.final.insert(0);
+        Nfa result = minimize_hopcroft(aut);
+        CHECK(result.delta.num_of_transitions() == 0);
+        CHECK(result.num_of_states() == 1);
+        CHECK(result.initial.size() == 1);
+        CHECK(result.final.size() == 1);
+        CHECK(result.initial == result.final);
+    }
+
+    SECTION("one trans") {
+        Nfa aut(2);
+        aut.initial.insert(0);
+        aut.final.insert(1);
+        aut.delta.add(0, 'a', 1);
+        Nfa result = minimize_hopcroft(aut);
+        CHECK(result.delta.num_of_transitions() == 1);
+        CHECK(result.num_of_states() == 2);
+        CHECK(result.initial.size() == 1);
+        CHECK(result.final.size() == 1);
+        CHECK(result.initial != result.final);
+        CHECK(are_equivalent(aut, result));
+    }
+
+    SECTION("line") {
+        Nfa aut(3);
+        aut.initial.insert(0);
+        aut.final.insert(2);
+        aut.delta.add(0, 'a', 1);
+        aut.delta.add(1, 'a', 2);
+        aut.delta.add(2, 'a', 3);
+        Nfa result = minimize_hopcroft(aut);
+        CHECK(result.delta.num_of_transitions() == 3);
+        CHECK(result.num_of_states() == 4);
+        CHECK(result.initial.size() == 1);
+        CHECK(result.final.size() == 1);
+        CHECK(result.initial != result.final);
+        CHECK(are_equivalent(aut, result));
+    }
+
+    SECTION("loop") {
+        Nfa aut;
+        aut.initial.insert(0);
+        aut.final.insert(1);
+        aut.delta.add(0, 1, 2);
+        aut.delta.add(1, 0, 1);
+        aut.delta.add(1, 1, 1);
+        aut.delta.add(2, 1, 1);
+
+        Nfa aut_brz = minimize_brzozowski(aut);
+        Nfa aut_hop = minimize_hopcroft(aut);
+        CHECK(are_equivalent(aut_brz, aut_hop));
+        CHECK(aut_brz.num_of_states() == aut_hop.num_of_states());
+        CHECK(aut_brz.delta.num_of_transitions() == aut_hop.delta.num_of_transitions());
+        CHECK(aut_brz.initial.size() == aut_hop.initial.size());
+        CHECK(aut_brz.final.size() == aut_hop.final.size());
+    }
+
+    SECTION("difficult") {
+        Nfa aut;
+        aut.initial.insert(0);
+        aut.final.insert(1);
+        aut.final.insert(6);
+        aut.delta.add(0, 0, 1);
+        aut.delta.add(1, 0, 2);
+        aut.delta.add(2, 0, 4);
+        aut.delta.add(4, 1, 5);
+        aut.delta.add(4, 0, 3);
+        aut.delta.add(5, 0, 6);
+        aut.delta.add(3, 0, 1);
+
+        Nfa aut_brz = minimize_brzozowski(aut);
+        Nfa aut_hop = minimize_hopcroft(aut);
+        CHECK(are_equivalent(aut_brz, aut_hop));
+        CHECK(aut_brz.num_of_states() == aut_hop.num_of_states());
+        CHECK(aut_brz.delta.num_of_transitions() == aut_hop.delta.num_of_transitions());
+        CHECK(aut_brz.initial.size() == aut_hop.initial.size());
+        CHECK(aut_brz.final.size() == aut_hop.final.size());
+    }
+
+}
+
 TEST_CASE("mata::nfa::reduce_size_by_residual()") {
     Nfa aut;
     StateRenaming state_renaming;
