@@ -197,11 +197,11 @@ cdef class Nfa:
         :param alph.Alphabet alphabet: alphabet corresponding to the automaton
         """
         cdef CAlphabet* c_alphabet = NULL
-        cdef StateSet empty_default_state_set
+        cdef CSparseSet[State] empty_default_sparse_set
         if alphabet:
             c_alphabet = alphabet.as_base()
         self.thisptr = make_shared[CNfa](
-            mata_nfa.CNfa(state_number, empty_default_state_set, empty_default_state_set, c_alphabet)
+            mata_nfa.CNfa(state_number, empty_default_sparse_set, empty_default_sparse_set, c_alphabet)
         )
         self.label = label
 

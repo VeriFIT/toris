@@ -23,6 +23,17 @@ add_library(libmata STATIC
 	nfa/delta.cc
 	nfa/operations.cc
 	nfa/builder.cc
+
+	nft/nft.cc
+	nft/inclusion.cc
+	nft/universal.cc
+	nft/complement.cc
+	nft/composition.cc
+	nft/intersection.cc
+	nft/concatenation.cc
+	nft/operations.cc
+	nft/builder.cc
+	nft/strings.cc
 )
 
 # libmata needs at least c++20

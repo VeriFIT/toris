@@ -1,17 +1,17 @@
-/* algorithms.hh -- Wrapping up algorithms for Nfa manipulation which would be otherwise in anonymous namespaces.
+/* algorithms.hh -- Wrapping up algorithms for Nft manipulation which would be otherwise in anonymous namespaces.
  */
 
-#ifndef MATA_NFA_INTERNALS_HH_
-#define MATA_NFA_INTERNALS_HH_
+#ifndef MATA_NFT_INTERNALS_HH_
+#define MATA_NFT_INTERNALS_HH_
 
-#include "nfa.hh"
+#include "nft.hh"
 #include "mata/simlib/util/binary_relation.hh"
 
 /**
- * Concrete NFA implementations of algorithms, such as complement, inclusion, or universality checking.
+ * Concrete NFT implementations of algorithms, such as complement, inclusion, or universality checking.
  *
- * This is a separation of the implementation from the interface defined in mata::nfa.
- * Note, that in mata::nfa interface, there are particular dispatch functions calling
+ * This is a separation of the implementation from the interface defined in mata::nft.
+ * Note, that in mata::nft interface, there are particular dispatch functions calling
  * these function according to parameters provided by a user.
  * E.g. we can call the following function: `is_universal(aut, alph, {{'algorithm', 'antichains'}})`
  * to check for universality based on antichain-based algorithm.
@@ -23,24 +23,14 @@
  *   4. Intersection/concatenation with epsilon transitions, or,
  *   5. Computing relation.
  */
-namespace mata::nfa::algorithms {
+namespace mata::nft::algorithms {
 
 /**
  * Brzozowski minimization of automata (revert -> determinize -> revert -> determinize).
  * @param[in] aut Automaton to be minimized.
  * @return Minimized automaton.
  */
-Nfa minimize_brzozowski(const Nfa& aut);
-
-/**
- * Hopcroft minimization of automata. Based on the algorithm from the paper:
- *  "Efficient Minimization of DFAs With Partial Transition Functions" by Antti Valmari and Petri Lehtinen.
- *  The algorithm works in O(a*n*log(n)) time and O(m+n+a) space, where: n is the number of states, a is the size
- *  of the alphabet, and m is the number of transitions. [https://dl.acm.org/doi/10.1016/j.ipl.2011.12.004]
- * @param[in] dfa_trimmed Deterministic automaton without useless states. Perform trimming before calling this function.
- * @return Minimized deterministic automaton.
- */
-Nfa minimize_hopcroft(const Nfa& dfa_trimmed);
+Nft minimize_brzozowski(const Nft& aut);
 
 /**
  * Complement implemented by determization, adding sink state and making automaton complete. Then it adds final states
@@ -51,16 +41,8 @@ Nfa minimize_hopcroft(const Nfa& dfa_trimmed);
  *  minimization.
  * @return Complemented automaton.
  */
-Nfa complement_classical(const Nfa& aut, const mata::utils::OrdVector<Symbol>& symbols);
-
-/**
- * Complement implemented by determization using Brzozowski minimization, adding a sink state and making the automaton
- *  complete. Then it swaps final and non-final states.
- * @param[in] aut Automaton to be complemented.
- * @param[in] symbols Symbols needed to make the automaton complete.
- * @return Complemented automaton.
- */
-Nfa complement_brzozowski(const Nfa& aut, const mata::utils::OrdVector<Symbol>& symbols);
+Nft complement_classical(const Nft& aut, const mata::utils::OrdVector<Symbol>& symbols,
+                         bool minimize_during_determinization = false);
 
 /**
  * Inclusion implemented by complementation of bigger automaton, intersecting it with smaller and then it checks
@@ -73,7 +55,7 @@ Nfa complement_brzozowski(const Nfa& aut, const mata::utils::OrdVector<Symbol>& 
  * @return True if smaller language is included,
  * i.e., if the final intersection of smaller complement of bigger is empty.
  */
-bool is_included_naive(const Nfa& smaller, const Nfa& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr);
+bool is_included_naive(const Nft& smaller, const Nft& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * Inclusion implemented by antichain algorithms.
@@ -84,7 +66,7 @@ bool is_included_naive(const Nfa& smaller, const Nfa& bigger, const Alphabet* al
  * @return True if smaller language is included,
  * i.e., if the final intersection of smaller complement of bigger is empty.
  */
-bool is_included_antichains(const Nfa& smaller, const Nfa& bigger, const Alphabet*  alphabet = nullptr, Run* cex = nullptr);
+bool is_included_antichains(const Nft& smaller, const Nft& bigger, const Alphabet*  alphabet = nullptr, Run* cex = nullptr, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * Universality check implemented by checking emptiness of complemented automaton
@@ -93,7 +75,7 @@ bool is_included_antichains(const Nfa& smaller, const Nfa& bigger, const Alphabe
  * @param[out] cex Counterexample word which eventually breaks the universality
  * @return True if the complemented automaton has non empty language, i.e., the original one is not universal
  */
-bool is_universal_naive(const Nfa& aut, const Alphabet& alphabet, Run* cex);
+bool is_universal_naive(const Nft& aut, const Alphabet& alphabet, Run* cex);
 
 /**
  * Universality checking based on subset construction with antichain.
@@ -102,29 +84,33 @@ bool is_universal_naive(const Nfa& aut, const Alphabet& alphabet, Run* cex);
  * @param[out] cex Counterexample word which eventually breaks the universality
  * @return True if the automaton is universal, otherwise false.
  */
-bool is_universal_antichains(const Nfa& aut, const Alphabet& alphabet, Run* cex);
+bool is_universal_antichains(const Nft& aut, const Alphabet& alphabet, Run* cex);
 
 Simlib::Util::BinaryRelation compute_relation(
-        const Nfa& aut,
+        const Nft& aut,
         const ParameterMap&  params = {{ "relation", "simulation"}, { "direction", "forward"}});
 
 /**
- * @brief Compute product of two NFAs, final condition is to be specified, with a possibility of using multiple epsilons.
+ * @brief Compute product of two NFTs, final condition is to be specified.
  *
- * @param[in] lhs First NFA to compute intersection for.
- * @param[in] rhs Second NFA to compute intersection for.
- * @param[in] first_epsilons The smallest epsilon.
+ * @param[in] lhs First NFT to compute intersection for.
+ * @param[in] rhs Second NFT to compute intersection for.
  * @param[in] final_condition The predicate that tells whether a pair of states is final (conjunction for intersection).
  * @param[out] prod_map Can be used to get the mapping of the pairs of the original states to product states.
  *   Mostly useless, it is only filled in and returned if !=nullptr, but the algorithm internally uses another data structures,
  *   because this one is too slow.
- * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
+ * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
+ * @param[in] lhs_first_aux_state The first auxiliary state in @p lhs. Two auxiliary states can not form a product state.
+ * @param[in] rhs_first_aux_state The first auxiliary state in @p rhs. Two auxiliary states con not form a product state.
+ * @return NFT as a product of NFTs @p lhs and @p rhs with ε handled as regular symbols.
  */
-Nfa product(const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State)> && final_condition,
-            const Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
+Nft product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State)> && final_condition,
+            std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr, JumpMode jump_mode = JumpMode::RepeatSymbol,
+            const State lhs_first_aux_state = Limits::max_state, const State rhs_first_aux_state = Limits::max_state);
 
 /**
- * @brief Concatenate two NFAs.
+ * @brief Concatenate two NFTs.
  *
  * Supports epsilon symbols when @p use_epsilon is set to true.
  * @param[in] lhs First automaton to concatenate.
@@ -135,9 +121,9 @@ Nfa product(const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State
  * @param[out] rhs_state_renaming Map mapping rhs states to result states.
  * @return Concatenated automaton.
  */
-Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon = false,
+Nft concatenate_eps(const Nft& lhs, const Nft& rhs, const Symbol& epsilon, bool use_epsilon = false,
                     StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
-} // Namespace mata::nfa::algorithms.
+} // Namespace mata::nft::algorithms.
 
-#endif // MATA_NFA_INTERNALS_HH_
+#endif // MATA_NFT_INTERNALS_HH_

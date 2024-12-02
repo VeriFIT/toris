@@ -82,10 +82,15 @@ public:
 
     bool operator==(const Alphabet &) const = delete;
 
+    /**
+     * Checks whether the alphabet has any symbols.
+     */
+    virtual bool empty() const = 0;
+
     virtual void clear() { throw std::runtime_error("Unimplemented"); }
 
 protected:
-    virtual const void *address() const { return this; }
+    virtual const void* address() const { return this; }
 }; // class Alphabet.
 
 /**
@@ -116,6 +121,8 @@ public:
     IntAlphabet(const IntAlphabet&) = default;
 
     IntAlphabet& operator=(const IntAlphabet& int_alphabet) = delete;
+
+    bool empty() const override { return false; }
 
     void clear() override { throw std::runtime_error("Nonsensical use of clear() on IntAlphabet."); }
 
@@ -175,9 +182,6 @@ public:
     explicit EnumAlphabet(const EnumAlphabet* const alphabet): EnumAlphabet(*alphabet) {}
     EnumAlphabet(EnumAlphabet&& rhs) = default;
 
-    EnumAlphabet& operator=(const EnumAlphabet& rhs) = default;
-    EnumAlphabet& operator=(EnumAlphabet&& rhs) = default;
-
     utils::OrdVector<Symbol> get_alphabet_symbols() const override { return symbols_; }
     utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const override {
         return symbols_.difference(symbols);
@@ -185,7 +189,9 @@ public:
 
     std::string reverse_translate_symbol(Symbol symbol) const override;
 
-public:
+    EnumAlphabet& operator=(const EnumAlphabet& rhs) = default;
+    EnumAlphabet& operator=(EnumAlphabet&& rhs) = default;
+
     /**
      * @brief Expand alphabet by symbols from the passed @p symbols.
      *
@@ -238,6 +244,8 @@ public:
      * @return The number of symbols.
      */
     size_t get_number_of_symbols() const { return symbols_.size(); }
+
+    bool empty() const override { return symbols_.empty(); }
 
 private:
     mata::utils::OrdVector<Symbol> symbols_{}; ///< Map of string transition symbols to symbol values.
@@ -293,9 +301,6 @@ public:
     explicit OnTheFlyAlphabet(const OnTheFlyAlphabet* const alphabet): OnTheFlyAlphabet(*alphabet) {}
     explicit OnTheFlyAlphabet(StringToSymbolMap str_sym_map) : symbol_map_(std::move(str_sym_map)) {}
 
-    OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs) = default;
-    OnTheFlyAlphabet& operator=(OnTheFlyAlphabet&& rhs) = default;
-
     /**
      * Create alphabet from a list of symbol names.
      * @param symbol_names Names for symbols on transitions.
@@ -321,6 +326,9 @@ public:
     std::string reverse_translate_symbol(Symbol symbol) const override;
 
 public:
+    OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs) = default;
+    OnTheFlyAlphabet& operator=(OnTheFlyAlphabet&& rhs) = default;
+
     /**
      * @brief Expand alphabet by symbols from the passed @p symbol_names.
      *
@@ -390,6 +398,8 @@ public:
      * @return Map mapping strings to symbols used internally in Mata.
      */
     const StringToSymbolMap& get_symbol_map() const { return symbol_map_; }
+
+    bool empty() const override { return symbol_map_.empty(); }
 
 private:
     StringToSymbolMap symbol_map_{}; ///< Map of string transition symbols to symbol values.
