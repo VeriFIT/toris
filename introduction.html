@@ -40,7 +40,7 @@
 <a class="reference external" href="https://github.com/VeriFIT/mata/actions/workflows/code-quality.yml"><img alt="Quality" src="https://github.com/VeriFIT/mata/actions/workflows/code-quality.yml/badge.svg" /></a>
 <a class="reference external" href="https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml"><img alt="Python-Binding (build-&amp;-test)" src="https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml/badge.svg?branch=devel" /></a>
 <a class="reference external" href="https://codecov.io/gh/VeriFIT/mata"><img alt="codecov" src="https://codecov.io/gh/VeriFIT/mata/branch/devel/graph/badge.svg?token=9VAVD19N4D" /></a></p>
-<p>Mata is an open source automata library that offers interface for different kinds of automata (NFA, etc.). Currently, Mata offers two interfaces:</p>
+<p>Mata is an open source automata library that offers interface for different kinds of automata, e.g. (non-)deterministic finite automata (NFAs), (non-)deterministic finite transducers, etc. Currently, Mata offers two interfaces:</p>
 <ol class="arabic simple">
 <li><p>An efficient library implemented in C/C++</p></li>
 <li><p>A flexible wrapper implemented in Python that uses the efficient library</p></li>
@@ -217,6 +217,29 @@ either use the binding in your own scripts or in the python interpreter.</p>
 <p>You can either run your scripts directly using <code class="docutils literal notranslate"><span class="pre">python</span></code> or compile it using the <code class="docutils literal notranslate"><span class="pre">cython</span></code> project.</p>
 </section>
 </section>
+<section id="supported-automata-models">
+<h2>Supported Automata Models<a class="headerlink" href="#supported-automata-models" title="Link to this heading">¶</a></h2>
+<p>While we try to keep the provided libray interface stable, Mata is still a project in its infancy.
+Hence, the interface is subject to change.
+For further information, see section <a class="reference internal" href="#README.md#Versioning"><span class="xref myst">Versioning</span></a>.</p>
+<p>Mata currently supports (non-)deterministic finite automata (NFAs), defined in <code class="docutils literal notranslate"><span class="pre">include/mata/nfa/</span></code>.</p>
+<blockquote>
+<div><p>[!WARNING]
+Mata provides an experimental (unstable) support for (non-)deterministic finite transducers (NFTs), defined in <code class="docutils literal notranslate"><span class="pre">include/mata/nft/</span></code>.
+The provided interface may change.</p>
+</div></blockquote>
+</section>
+<section id="versioning">
+<h2>Versioning<a class="headerlink" href="#versioning" title="Link to this heading">¶</a></h2>
+<p>Mata follows the versioning scheme <code class="docutils literal notranslate"><span class="pre">GENERATION.MAJOR.MINOR</span></code>, e.g. <code class="docutils literal notranslate"><span class="pre">1.2.3</span></code> where <code class="docutils literal notranslate"><span class="pre">1</span></code> is the generation number, and <code class="docutils literal notranslate"><span class="pre">2</span></code> the major version, and <code class="docutils literal notranslate"><span class="pre">3</span></code> the minor version.
+The <code class="docutils literal notranslate"><span class="pre">MAJOR</span></code> and <code class="docutils literal notranslate"><span class="pre">MINOR</span></code> versions follow loosely the <a class="reference external" href="https://semver.org/">Semantic Versioning</a> scheme.</p>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">GENERATION</span></code> number represents our subjective generation of the Mata library.
+Typically, we increment the <code class="docutils literal notranslate"><span class="pre">GENERATION</span></code> number when a substantial change to the library is introduced, such as adding support for new automata models, extensive rewrite of (a part of) the Mata library, or to denote a new scientific paper documenting the latest developments in the Mata library is published, etc.</p></li>
+<li><p>Generally, the changes in the <code class="docutils literal notranslate"><span class="pre">MINOR</span></code> version should not break the existing interface, but exceptions might occur.</p></li>
+<li><p>The changes in the <code class="docutils literal notranslate"><span class="pre">MAJOR</span></code> version might introduce breaking changes that modify the existing interface and might require changing the code in your projects that use the Mata library.</p></li>
+</ul>
+</section>
 <section id="publications">
 <h2>Publications<a class="headerlink" href="#publications" title="Link to this heading">¶</a></h2>
 <ul class="simple">
@@ -300,6 +323,8 @@ that may be made of the information it contains.</p>
 <li class="toctree-l2"><a class="reference internal" href="#building-and-installing-from-sources">Building and installing from sources</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#python-binding">Python binding</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#supported-automata-models">Supported Automata Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#versioning">Versioning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#publications">Publications</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#contributing">Contributing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#links">Links</a></li>
