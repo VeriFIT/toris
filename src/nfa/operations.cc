@@ -1142,7 +1142,7 @@ public:
      * @param s The set index.
      * @return True if the set has no marked elements, false otherwise.
      */
-    inline bool no_marks(const size_t s) const { return mid[s] == first[s]; }
+    inline bool has_no_marks(const size_t s) const { return mid[s] == first[s]; }
 
     /**
      * @brief Split the set into two sets according to the marked elements (the mid).
@@ -1229,7 +1229,7 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
         for (State q = brp.get_first(b_prime); q != RefinablePartition<State>::NO_MORE_ELEMENTS; q = brp.get_next(q)) {
             for (const size_t trans_idx : incomming_trans_idxs[q]) {
                 const size_t splitter_idx = trp.set_idx[trans_idx];
-                if (trp.no_marks(splitter_idx)) {
+                if (trp.has_no_marks(splitter_idx)) {
                     touched_spls.push(splitter_idx);
                 }
                 // Mark the transition in the splitter and move it to the first half of the set.
@@ -1269,7 +1269,7 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
         for (size_t trans_idx = trp.get_first(splitter_idx); trans_idx != RefinablePartition<size_t>::NO_MORE_ELEMENTS; trans_idx = trp.get_next(trans_idx)) {
             const State q = trans_source_map[trans_idx];
             const size_t b_prime = brp.set_idx[q];
-            if (brp.no_marks(b_prime)) {
+            if (brp.has_no_marks(b_prime)) {
                 touched_blocks.push(b_prime);
             }
             brp.mark(q);
