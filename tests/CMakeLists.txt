@@ -13,6 +13,15 @@ add_executable(tests
 		nfa/nfa-product.cc
 		nfa/nfa-profiling.cc
 		nfa/nfa-plumbing.cc
+		nft/delta.cc
+		nft/nft.cc
+		nft/builder.cc
+		nft/nft-composition.cc
+		nft/nft-concatenation.cc
+		nft/nft-intersection.cc
+		nft/nft-profiling.cc
+		nft/nft-plumbing.cc
+		nft/strings.cc
 		strings/nfa-noodlification.cc
 		strings/nfa-segmentation.cc
 		strings/nfa-string-solving.cc

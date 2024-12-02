@@ -60,7 +60,7 @@ enum class AutomatonType {
     Dfa     ///< Deterministic finite automaton.
 };
 
-struct Nfa; ///< A non-deterministic finite automaton.
+class Nfa; ///< A non-deterministic finite automaton.
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 constexpr Symbol EPSILON = Limits::max_symbol;

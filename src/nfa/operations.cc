@@ -1328,7 +1328,7 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 
     // Construct the minimized automaton using equivalence classes (BRP).
     assert(dfa_trimmed.initial.size() == 1);
-    Nfa result(brp.num_of_sets, StateSet{ brp.set_idx[*dfa_trimmed.initial.begin()] }, StateSet{});
+    Nfa result(brp.num_of_sets, { brp.set_idx[*dfa_trimmed.initial.begin()] }, {});
     for (size_t block_idx = 0; block_idx < brp.num_of_sets; ++block_idx) {
         const State q = brp.get_first(block_idx);
         if (dfa_trimmed.final.contains(q)) {
@@ -1553,7 +1553,7 @@ Run mata::nfa::encode_word(const Alphabet* alphabet, const std::vector<std::stri
     return { .word = alphabet->translate_word(input) };
 }
 
-std::set<mata::Word> mata::nfa::Nfa::get_words(unsigned max_length) const {
+std::set<mata::Word> mata::nfa::Nfa::get_words(size_t max_length) const {
     std::set<mata::Word> result;
 
     // contains a pair: a state s and the word with which we got to the state s

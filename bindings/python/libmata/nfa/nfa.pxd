@@ -138,7 +138,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         # Constructor
         CNfa() except +
         CNfa(unsigned long) except +
-        CNfa(unsigned long, StateSet, StateSet, CAlphabet*)
+        CNfa(unsigned long, CSparseSet[State], CSparseSet[State], CAlphabet*)
         CNfa(const CNfa&)
 
         # Public Functions

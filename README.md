@@ -5,7 +5,7 @@
 [![Python-Binding (build-&-test)](https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml/badge.svg?branch=devel)](https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml)
 [![codecov](https://codecov.io/gh/VeriFIT/mata/branch/devel/graph/badge.svg?token=9VAVD19N4D)](https://codecov.io/gh/VeriFIT/mata)
 
-Mata is an open source automata library that offers interface for different kinds of automata (NFA, etc.). Currently, Mata offers two interfaces:
+Mata is an open source automata library that offers interface for different kinds of automata, e.g. (non-)deterministic finite automata (NFAs), (non-)deterministic finite transducers, etc. Currently, Mata offers two interfaces:
 
   1. An efficient library implemented in C/C++
   2. A flexible wrapper implemented in Python that uses the efficient library
@@ -214,6 +214,29 @@ The usage of the binding copies (to certain levels) the usage of the C++ library
 ```
 
 You can either run your scripts directly using `python` or compile it using the `cython` project.
+
+# Supported Automata Models
+
+While we try to keep the provided libray interface stable, Mata is still a project in its infancy.
+Hence, the interface is subject to change.
+For further information, see section [Versioning](README.md#Versioning).
+
+Mata currently supports (non-)deterministic finite automata (NFAs), defined in `include/mata/nfa/`.
+
+> [!WARNING]
+> Mata provides an experimental (unstable) support for (non-)deterministic finite transducers (NFTs), defined in `include/mata/nft/`.
+> The provided interface may change.
+
+# Versioning
+
+Mata follows the versioning scheme `GENERATION.MAJOR.MINOR`, e.g. `1.2.3` where `1` is the generation number, and `2` the major version, and `3` the minor version.
+The `MAJOR` and `MINOR` versions follow loosely the [Semantic Versioning](https://semver.org/) scheme.
+
+- The `GENERATION` number represents our subjective generation of the Mata library.
+  Typically, we increment the `GENERATION` number when a substantial change to the library is introduced, such as adding support for new automata models, extensive rewrite of (a part of) the Mata library, or to denote a new scientific paper documenting the latest developments in the Mata library is published, etc.
+- Generally, the changes in the `MINOR` version should not break the existing interface, but exceptions might occur.
+- The changes in the `MAJOR` version might introduce breaking changes that modify the existing interface and might require changing the code in your projects that use the Mata library.
+
 
 # Publications
 - Chocholatý, D., Fiedor, T., Havlena, V., Holík, L., Hruška, M., Lengál, O., & Síč, J. (2023). [Mata, a Fast and Simple Finite Automata Library](https://doi.org/10.1007/978-3-031-57249-4_7). In *Proc. of TACAS'24*, volume 14571 of LNCS, pages 130-151, 2024. Springer.

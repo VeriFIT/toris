@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 #include <queue>
+#include <optional>
 
 #include "mata/alphabet.hh"
 #include "mata/parser/parser.hh"
@@ -44,9 +45,9 @@
 namespace mata::nfa {
 
 /**
- * A struct representing an NFA.
+ * A class representing an NFA.
  */
-struct Nfa {
+class Nfa {
 public:
     /**
      * @brief For state q, delta[q] keeps the list of transitions ordered by symbols.
@@ -77,9 +78,9 @@ public:
      *
      * @param[in] num_of_states Number of states for which to preallocate Delta.
      */
-    explicit Nfa(const unsigned long num_of_states, StateSet initial_states = {},
-                 StateSet final_states = {}, Alphabet* alphabet = nullptr)
-        : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet) {}
+    explicit Nfa(const size_t num_of_states, utils::SparseSet<State> initial_states = {},
+                 utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr)
+        : delta(num_of_states), initial(std::move(initial_states)), final(std::move(final_states)), alphabet(alphabet) {}
 
     /**
      * @brief Construct a new explicit NFA from other NFA.
@@ -104,6 +105,27 @@ public:
      * @return The requested @p state.
      */
     State add_state(State state);
+
+    /**
+     * Inserts a @p word into the NFA from a source state @p source to a target state @p target.
+     * Creates new states along the path of the @p word.
+     *
+     * @param source The source state where the word begins. It must already be a part of the automaton.
+     * @param word The nonempty word to be inserted into the NFA.
+     * @param target The target state where the word ends.
+     * @return The state @p target where the inserted @p word ends.
+     */
+    State insert_word(State source, const Word& word, State target);
+
+    /**
+     * Inserts a @p word into the NFA from a source state @p source to a new target state.
+     * Creates new states along the path of the @p word.
+     *
+     * @param source The source state where the word begins. It must already be a part of the automaton.
+     * @param word The nonempty word to be inserted into the NFA.
+     * @return The newly created target state where the inserted @p word ends.
+     */
+    State insert_word(State source, const Word& word);
 
     /**
      * @brief Get the current number of states in the whole automaton.
@@ -280,14 +302,16 @@ public:
     /**
      * @brief Prints the automaton in DOT format
      *
+     * @param[in] ascii Whether to use ASCII characters for the output.
      * @return automaton in DOT format
      */
-    std::string print_to_dot() const;
+    std::string print_to_dot(const bool ascii = false) const;
     /**
      * @brief Prints the automaton to the output stream in DOT format
+     *
+     * @param[in] ascii Whether to use ASCII characters for the output.
      */
-    void print_to_dot(std::ostream &output) const;
-
+    void print_to_dot(std::ostream &output, const bool ascii = false) const;
     /**
      * @brief Prints the automaton to the file in DOT format
      * @param filename Name of the file to print the automaton to
@@ -404,7 +428,7 @@ public:
      * you can get all words by calling
      *      get_words(aut.num_of_states())
      */
-    std::set<Word> get_words(unsigned max_length) const;
+    std::set<Word> get_words(size_t max_length) const;
 
     /**
      * @brief Get any arbitrary accepted word in the language of the automaton.
@@ -471,7 +495,7 @@ public:
      * @pre @c this is a deterministic automaton.
      */
     Nfa& complement_deterministic(const mata::utils::OrdVector<Symbol>& symbols, std::optional<State> sink_state = std::nullopt);
-}; // struct Nfa.
+}; // class Nfa.
 
 // Allow variadic number of arguments of the same type.
 //

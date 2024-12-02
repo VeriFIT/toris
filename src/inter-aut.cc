@@ -349,6 +349,8 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
             aut.automaton_type = mata::IntermediateAut::AutomatonType::NFA;
         } else if (section.type.find("AFA") != std::string::npos) {
             aut.automaton_type = mata::IntermediateAut::AutomatonType::AFA;
+        } else if (section.type.find("NFT") != std::string::npos) {
+            aut.automaton_type = mata::IntermediateAut::AutomatonType::NFT;
         }
         aut.alphabet_type = get_alphabet_type(section.type);
 
@@ -460,6 +462,23 @@ void mata::IntermediateAut::parse_transition(mata::IntermediateAut &aut, const s
             assert(false && "Unknown NFA type");
 
         postfix.emplace_back(mata::FormulaNode::Type::OPERATOR, "&", "&", mata::FormulaNode::OperatorType::AND);
+    } else if (aut.automaton_type == mata::IntermediateAut::AutomatonType::NFT && tokens[tokens.size() - 2] != "&") {
+        // we need to take care about this case manually since user does not need to determine
+        // symbol and state naming and put conjunction to transition
+        if (aut.alphabet_type != mata::IntermediateAut::AlphabetType::BITVECTOR) {
+            assert(rhs.size() == 2);
+            postfix.emplace_back(mata::FormulaNode::Type::OPERAND, rhs[0], rhs[0], mata::FormulaNode::OperandType::SYMBOL);
+            postfix.emplace_back(create_node(aut, rhs[1]));
+        } else if (aut.alphabet_type == mata::IntermediateAut::AlphabetType::BITVECTOR) {
+            // This is a case where rhs state is not separated by a conjunction from the rest of the transitions.
+            std::string last_token{ rhs.back() };
+            rhs.pop_back();
+            postfix = infix_to_postfix(aut, rhs);
+            postfix.emplace_back(create_node(aut, last_token));
+        } else
+            assert(false && "Unknown NFT type");
+
+        postfix.emplace_back(mata::FormulaNode::Type::OPERATOR, "&", "&", mata::FormulaNode::OperatorType::AND);
     } else
         postfix = infix_to_postfix(aut, rhs);
 
@@ -525,7 +544,7 @@ std::vector<mata::IntermediateAut> mata::IntermediateAut::parse_from_mf(const ma
     result.reserve(parsed.size());
 
     for (const parser::ParsedSection& parsed_section: parsed) {
-        if (parsed_section.type.find("FA") == std::string::npos) {
+        if (parsed_section.type.find("FA") == std::string::npos && parsed_section.type.find("FT") == std::string::npos) {
             continue;
         }
         result.push_back(mf_to_aut(parsed_section));

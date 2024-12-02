@@ -118,13 +118,13 @@ public:
     using super::empty, super::size;
     using super::to_vector;
     // dangerous, breaks the sortedness invariant
-    using super::emplace_back;
-    // dangerous, breaks the sortedness invariant
-    using super::push_back;
+    using super::push_back, super::emplace_back;
     // is adding non-const version as well ok?
+    using super::front;
     using super::back;
     using super::pop_back;
     using super::filter;
+    using super::clear;
 
     using super::erase;
 
@@ -301,50 +301,50 @@ public:
     };
 
     /**
-     * @brief Get constant reference to the state post of @p src_state.
+     * @brief Get constant reference to the state post of @p source.
      *
-     * If we try to access a state post of a @p src_state which is present in the automaton as an initial/final state,
+     * If we try to access a state post of a @p source which is present in the automaton as an initial/final state,
      *  yet does not have allocated space in @c Delta, an @c empty_post is returned. Hence, the function has no side
      *  effects (no allocation is performed; iterators remain valid).
-     * @param state_from[in] Source state of a state post to access.
-     * @return State post of @p src_state.
+     * @param source[in] Source state of a state post to access.
+     * @return State post of @p source.
      */
-    const StatePost& state_post(const State src_state) const {
-        if (src_state >= num_of_states()) {
+    const StatePost& state_post(const State source) const {
+        if (source >= num_of_states()) {
             return empty_state_post;
         }
-        return state_posts_[src_state];
+        return state_posts_[source];
     }
 
     /**
-     * @brief Get constant reference to the state post of @p src_state.
+     * @brief Get constant reference to the state post of @p source.
      *
-     * If we try to access a state post of a @p src_state which is present in the automaton as an initial/final state,
+     * If we try to access a state post of a @p source which is present in the automaton as an initial/final state,
      *  yet does not have allocated space in @c Delta, an @c empty_post is returned. Hence, the function has no side
      *  effects (no allocation is performed; iterators remain valid).
-     * @param state_from[in] Source state of a state post to access.
-     * @return State post of @p src_state.
+     * @param source[in] Source state of a state post to access.
+     * @return State post of @p source.
      */
-    const StatePost& operator[](State src_state) const { return state_post(src_state); }
+    const StatePost& operator[](const State source) const { return state_post(source); }
 
     /**
-     * @brief Get mutable (non-constant) reference to the state post of @p src_state.
+     * @brief Get mutable (non-constant) reference to the state post of @p source.
      *
      * The function allows modifying the state post.
      *
      * BEWARE, IT HAS A SIDE EFFECT.
      *
-     * If we try to access a state post of a @p src_state which is present in the automaton as an initial/final state,
-     *  yet does not have allocated space in @c Delta, a new state post for @p src_state will be allocated along with
+     * If we try to access a state post of a @p source which is present in the automaton as an initial/final state,
+     *  yet does not have allocated space in @c Delta, a new state post for @p source will be allocated along with
      *  all state posts for all previous states. This in turn may cause that the entire post data structure is
      *  re-allocated. Iterators to @c Delta will get invalidated.
      * Use the constant 'state_post()' is possible. Or, to prevent the side effect from causing issues, one might want
      *  to make sure that posts of all states in the automaton are allocated, e.g., write an NFA method that allocate
      *  @c Delta for all states of the NFA.
-     * @param state_from[in] Source state of a state post to access.
-     * @return State post of @p src_state.
+     * @param source[in] Source state of a state post to access.
+     * @return State post of @p source.
      */
-    StatePost& mutable_state_post(State src_state);
+    StatePost& mutable_state_post(State source);
 
     void defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
 
@@ -383,15 +383,15 @@ public:
      */
     size_t num_of_transitions() const;
 
-    void add(State state_from, Symbol symbol, State state_to);
+    void add(State source, Symbol symbol, State target);
     void add(const Transition& trans) { add(trans.source, trans.symbol, trans.target); }
-    void remove(State src, Symbol symb, State tgt);
-    void remove(const Transition& trans) { remove(trans.source, trans.symbol, trans.target); }
+    void remove(State source, Symbol symbol, State target);
+    void remove(const Transition& transition) { remove(transition.source, transition.symbol, transition.target); }
 
     /**
      * Check whether @c Delta contains a passed transition.
      */
-    bool contains(State src, Symbol symb, State tgt) const;
+    bool contains(State source, Symbol symbol, State target) const;
     /**
      * Check whether @c Delta contains a transition passed as a triple.
      */
@@ -429,11 +429,11 @@ public:
     /**
      * @brief Add transitions to multiple destinations
      *
-     * @param state_from From
+     * @param source From
      * @param symbol Symbol
-     * @param states Set of states to
+     * @param targets Set of states to
      */
-    void add(const State state_from, const Symbol symbol, const StateSet& states);
+    void add(const State source, const Symbol symbol, const StateSet& targets);
 
     using const_iterator = std::vector<StatePost>::const_iterator;
     const_iterator cbegin() const { return state_posts_.cbegin(); }
@@ -498,7 +498,7 @@ public:
      * @brief Get the maximum non-epsilon used symbol.
      */
     Symbol get_max_symbol() const;
-private:
+protected:
     std::vector<StatePost> state_posts_;
 }; // class Delta.
 

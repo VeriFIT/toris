@@ -429,13 +429,21 @@ bool Nfa::is_flat() const {
     return flat;
 }
 
-std::string Nfa::print_to_dot() const {
+std::string Nfa::print_to_dot(const bool ascii) const {
     std::stringstream output;
-    print_to_dot(output);
+    print_to_dot(output, ascii);
     return output.str();
 }
 
-void Nfa::print_to_dot(std::ostream &output) const {
+void Nfa::print_to_dot(std::ostream &output, const bool ascii) const {
+    auto to_ascii = [&](const Symbol symbol) {
+        // Translate only printable ASCII characters.
+        if (symbol < 33) {
+            return std::to_string(symbol);
+        }
+        return "\\'" + std::string(1, static_cast<char>(symbol)) + "\\'";
+    };
+
     output << "digraph finiteAutomaton {" << std::endl
                  << "node [shape=circle];" << std::endl;
 
@@ -450,7 +458,11 @@ void Nfa::print_to_dot(std::ostream &output) const {
             for (State target: move.targets) {
                 output << target << " ";
             }
-            output << "} [label=" << move.symbol << "];" << std::endl;
+            if (ascii) {
+                output << "} [label=\"" << to_ascii(move.symbol) << "\"];" << std::endl;
+            } else {
+                output << "} [label=\"" << move.symbol << "\"];" << std::endl;
+            }
         }
     }
 
@@ -514,7 +526,7 @@ void Nfa::print_to_mata(const std::string& filename, const Alphabet* alphabet) c
 }
 
 Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
-    Nfa digraph{num_of_states(), StateSet(initial), StateSet(final) };
+    Nfa digraph{num_of_states(), initial, final };
     // Add directed transitions for digraph.
     for (const Transition& transition: delta.transitions()) {
         // Directly try to add the transition. Finding out whether the transition is already in the digraph
@@ -600,6 +612,36 @@ State Nfa::add_state(State state) {
     return state;
 }
 
+State Nfa::insert_word(const State source, const Word &word, const State target) {
+    assert(!word.empty());
+    assert(source < num_of_states());
+    assert(target < num_of_states());
+
+    const size_t word_len = word.size();
+    if (word_len == 1) {
+        delta.add(source, word[0], target);
+        return target;
+    }
+
+    // Add transition source --> inner_state.
+    State inner_state = add_state();
+    delta.add(source, word[0], inner_state);
+
+    // Add transitions inner_state --> inner_state
+    State prev_state = inner_state;
+    for (size_t idx{ 1 }; idx < word_len - 1; idx++) {
+        inner_state = add_state();
+        delta.add(prev_state, word[idx], inner_state);
+        prev_state = inner_state;
+    }
+
+    // Add transition inner_state --> target
+    delta.add(prev_state, word[word_len - 1], target);
+    return target;
+}
+
+State Nfa::insert_word(const State source, const Word &word) { return insert_word(source, word, add_state()); }
+
 size_t Nfa::num_of_states() const {
     return std::max({
         static_cast<size_t>(initial.domain_size()),
@@ -671,8 +713,8 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& aut) {
 }
 
 Nfa Nfa::decode_utf8() const {
-    Nfa result{ this->num_of_states(), StateSet{this->initial}, StateSet{this->final} };
-    BoolVector used(this->num_of_states(), false);
+    Nfa result{ num_of_states(), { initial }, { final } };
+    BoolVector used(num_of_states(), false);
     std::stack<State> worklist;
 
     // Pushes a set of states to the worklist and marks them as used.
@@ -693,9 +735,9 @@ Nfa Nfa::decode_utf8() const {
     // For example, consider the sequences 0xC8 0x80 and 0xC8 0x88.
     // Based solely on the first byte (0xC8), we cannot determine which sequence
     // will result in the higher number.
-    auto add_to_state_post = [&](StatePost &state_post, const SymbolPost &symbol_post, const bool is_nondet) {
+    auto add_to_state_post = [&](StatePost &state_post, const SymbolPost& symbol_post, const bool is_nondet) {
         if (is_nondet) {
-            state_post.insert(std::move(symbol_post));
+            state_post.insert(symbol_post);
         } else {
             state_post.emplace_back(std::move(symbol_post));
         }
