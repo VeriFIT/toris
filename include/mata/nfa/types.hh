@@ -43,6 +43,23 @@ public:
     static const Symbol max_symbol = std::numeric_limits<Symbol>::max();
 };
 
+/**
+ * @brief Properties of an automaton.
+ */
+enum class AutomatonProperty {
+    Trimmed,    ///< Automaton has only useful states (i.e., reachable from initial states and leading to final states).
+    Complete,   ///< Automaton is complete (i.e., every state has an outgoing transition for every symbol).
+    Minimal     ///< Automaton is minimal.
+};
+
+/**
+ * @brief Type of an automaton (NFA or DFA).
+ */
+enum class AutomatonType {
+    Nfa,    ///< Non-deterministic finite automaton.
+    Dfa     ///< Deterministic finite automaton.
+};
+
 struct Nfa; ///< A non-deterministic finite automaton.
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.

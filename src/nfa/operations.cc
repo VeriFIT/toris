@@ -927,27 +927,70 @@ Nfa mata::nfa::algorithms::minimize_brzozowski(const Nfa& aut) {
     return determinize(revert(determinize(revert(aut))));
 }
 
-Nfa mata::nfa::minimize(
-                const Nfa& aut,
-                const ParameterMap& params)
-{
-    Nfa result;
-    // setting the default algorithm
-    decltype(algorithms::minimize_brzozowski)* algo = algorithms::minimize_brzozowski;
+Nfa mata::nfa::minimize_nfa(const Nfa& aut, const ParameterMap& params) {
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
             " requires setting the \"algorithm\" key in the \"params\" argument; "
             "received: " + std::to_string(params));
     }
 
+    // Setting the algorithm. Default is Hopcroft.
     const std::string& str_algo = params.at("algorithm");
-    if ("brzozowski" == str_algo) {  /* default */ }
+    decltype(algorithms::minimize_brzozowski)* algo = algorithms::minimize_brzozowski;
+    if (str_algo == "brzozowski") { /* default */ }
     else {
-        throw std::runtime_error(std::to_string(__func__) +
-            " received an unknown value of the \"algorithm\" key: " + str_algo);
+        throw std::runtime_error(std::string(__func__) +
+            " received an unknown value for the \"algorithm\" key: " + str_algo);
     }
 
     return algo(aut);
+}
+
+Nfa mata::nfa::minimize_dfa(const Nfa &aut,
+                            const std::optional<AutomatonProperty> property,
+                            const ParameterMap& params)
+{
+    if (!haskey(params, "algorithm")) {
+        throw std::runtime_error(std::to_string(__func__) +
+            " requires setting the \"algorithm\" key in the \"params\" argument; "
+            "received: " + std::to_string(params));
+    }
+
+    // Setting the algorithm. Default is Hopcroft.
+    const std::string& str_algo = params.at("algorithm");
+    decltype(algorithms::minimize_hopcroft)* algo = algorithms::minimize_hopcroft;
+    if (str_algo == "hopcroft") {
+        /* default */;
+    } else if (str_algo == "brzozowski") {
+        algo = algorithms::minimize_brzozowski;
+    } else {
+        throw std::runtime_error(std::string(__func__) +
+            " received an unknown value for the \"algorithm\" key: " + str_algo);
+    }
+
+    // Hopcroft algorithm does not work with non-trimmed automata.
+    if (str_algo == "hopcroft" && property != AutomatonProperty::Trimmed) {
+        return algo(Nfa(aut).trim());
+    }
+    return algo(aut);
+}
+
+Nfa mata::nfa::minimize(const Nfa &aut,
+                        const AutomatonType type,
+                        const std::optional<AutomatonProperty> property,
+                        const ParameterMap& params)
+{
+    if (type == AutomatonType::Dfa) {
+        return minimize_dfa(aut, property, params);
+    }
+    return minimize_nfa(aut, params);
+}
+
+Nfa mata::nfa::minimize(
+                const Nfa& aut,
+                const ParameterMap& params)
+{
+    return minimize(aut, AutomatonType::Nfa, std::nullopt, params);
 }
 
 // Anonymous namespace for the Hopcroft minimization algorithm.

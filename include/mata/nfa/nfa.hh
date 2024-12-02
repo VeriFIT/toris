@@ -646,8 +646,50 @@ Nfa complement(const Nfa& aut, const utils::OrdVector<Symbol>& symbols,
  * @brief Compute minimal deterministic automaton.
  *
  * @param[in] aut Automaton whose minimal version to compute.
+ * @param[in] property Property of the automaton to minimize.
+ *  - AutomatonProperty::Trimmed - Trim will not be performed.
  * @param[in] params Optional parameters to control the minimization algorithm:
- * - "algorithm": "brzozowski"
+ * - "algorithm": "brzozowski" (Default: "brzozowski")
+ * @return Minimal deterministic automaton.
+ */
+Nfa minimize_nfa(const Nfa& aut, const ParameterMap& params = { { "algorithm", "brzozowski" } });
+
+/**
+ * @brief Compute minimal deterministic automaton.
+ *
+ * @param[in] aut Deterministic automaton whose minimal version to compute.
+ * @param[in] property Property of the automaton to minimize.
+ *  - AutomatonProperty::Trimmed - Trim will not be performed.
+ * @param[in] params Optional parameters to control the minimization algorithm:
+ * - "algorithm": "hopcroft", "brzozowski" (Default: "hopcroft")
+ * @return Minimal deterministic automaton.
+ */
+Nfa minimize_dfa(const Nfa &aut,
+                 const std::optional<AutomatonProperty> property,
+                 const ParameterMap& params = { { "algorithm", "hopcroft" } });
+
+/**
+ * @brief Compute minimal deterministic automaton.
+ *
+ * @param[in] aut Automaton whose minimal version to compute.
+ * @param[in] type Type of the automaton to minimize (NFA or DFA).
+ * @param[in] property Property of the automaton to minimize.
+ *  - AutomatonProperty::Trimmed - Trim will not be performed.
+ * @param[in] params Optional parameters to control the minimization algorithm:
+ * - "algorithm": "hopcroft", "brzozowski" (Default: "brzozowski")
+ * @return Minimal deterministic automaton.
+ */
+Nfa minimize(const Nfa &aut,
+             const AutomatonType type,
+             const std::optional<AutomatonProperty> property = std::nullopt,
+             const ParameterMap& params = { { "algorithm", "brzozowski" } });
+
+/**
+ * @brief Compute minimal deterministic automaton.
+ *
+ * @param[in] aut Automaton whose minimal version to compute.
+ * @param[in] params Optional parameters to control the minimization algorithm:
+ * - "algorithm": "hopcroft", "brzozowski" (Default: "brzozowski")
  * @return Minimal deterministic automaton.
  */
 Nfa minimize(const Nfa &aut, const ParameterMap& params = { { "algorithm", "brzozowski" } });
