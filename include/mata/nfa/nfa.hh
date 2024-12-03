@@ -671,7 +671,7 @@ Nfa complement(const Nfa& aut, const utils::OrdVector<Symbol>& symbols,
  *
  * @param[in] aut NFA whose minimal version to compute.
  * @param[in] params Optional parameters to control the minimization algorithm:
- * - "algorithm": "hopcroft", "brzozowski" (Default: "brzozowski")
+ * - "algorithm": "brzozowski" (Default: "brzozowski")
  * @return Minimal deterministic automaton.
  */
 Nfa make_minimal_dfa(const Nfa &nfa, const ParameterMap& params = { { "algorithm", "brzozowski" } });
