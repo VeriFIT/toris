@@ -967,10 +967,12 @@ Nfa mata::nfa::minimize(const Nfa &dfa, const ParameterMap& params)
     }
 
     // Hopcroft algorithm does not work with non-trimmed automata.
-    const BoolVector is_used = dfa.get_useful_states();
-    bool is_trimmed = std::all_of(is_used.begin(), is_used.end(), [](bool b) { return b; });
-    if (str_algo == "hopcroft" && !is_trimmed) {
-        return algo(Nfa(dfa).trim());
+    if (str_algo == "hopcroft") {
+        const BoolVector is_used = dfa.get_useful_states();
+        bool is_trimmed = std::all_of(is_used.begin(), is_used.end(), [](bool b) { return b; });
+        if (!is_trimmed) {
+            return algo(Nfa(dfa).trim());
+        }
     }
     return algo(dfa);
 }
