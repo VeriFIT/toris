@@ -76,13 +76,13 @@ Nft& Nft::trim(StateRenaming* state_renaming) {
     return *this;
 }
 
-std::string Nft::print_to_DOT(const bool ascii) const {
+std::string Nft::print_to_dot(const bool ascii) const {
     std::stringstream output;
-    print_to_DOT(output, ascii);
+    print_to_dot(output, ascii);
     return output.str();
 }
 
-void Nft::print_to_DOT(std::ostream &output, const bool ascii) const {
+void Nft::print_to_dot(std::ostream &output, const bool ascii) const {
     auto translate_special_symbols = [&](const Symbol symbol) -> std::string {
         if (symbol == EPSILON) {
             return "<eps>";

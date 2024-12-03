@@ -383,13 +383,13 @@ public:
      * @param[in] ascii Whether to use ASCII characters for the output.
      * @return automaton in DOT format
      */
-    std::string print_to_DOT(bool ascii = false) const;
+    std::string print_to_dot(bool ascii = false) const;
     /**
      * @brief Prints the automaton to the output stream in DOT format
      *
      * @param[in] ascii Whether to use ASCII characters for the output.
      */
-    void print_to_DOT(std::ostream &output, bool ascii = false) const;
+    void print_to_dot(std::ostream &output, bool ascii = false) const;
     /**
      * @brief Prints the automaton in mata format
      *
