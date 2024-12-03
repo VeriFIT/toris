@@ -264,8 +264,22 @@ public:
     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
     * of @c DONT_CARE symbols.
+    * @return Self with inserted identity.
     */
-    void insert_identity(State state, const std::vector<Symbol>& symbols, JumpMode jump_mode = JumpMode::RepeatSymbol);
+    Nft& insert_identity(State state, const std::vector<Symbol>& symbols, JumpMode jump_mode = JumpMode::RepeatSymbol);
+
+    /**
+    * Inserts identity transitions into the NFT.
+    *
+    * @param state The state where the identity transition will be inserted. @p state server as both the source and
+    *  target state.
+    * @param alpahbet The alphabet with symbols used for the identity transition. Identity will be created for each symbol in the @p alphabet.
+    * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+    * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+    * of @c DONT_CARE symbols.
+    * @return Self with inserted identity.
+    */
+    Nft& insert_identity(State state, const Alphabet* alphabet, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
     /**
     * Inserts an identity transition into the NFT.
@@ -276,8 +290,9 @@ public:
     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
     * of @c DONT_CARE symbols.
+    * @return Self with inserted identity.
     */
-    void insert_identity(State state, Symbol symbol, JumpMode jump_mode = JumpMode::RepeatSymbol);
+    Nft& insert_identity(State state, Symbol symbol, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
     /**
      * @brief Clear the underlying NFT to a blank NFT.
