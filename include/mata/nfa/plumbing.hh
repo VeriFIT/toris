@@ -35,7 +35,9 @@ inline void complement(
                                        { "minimize",  "false"}}) { *result = complement(aut, alphabet, params);
 }
 
-inline void minimize(Nfa* res, const Nfa &aut) { *res = minimize(aut); }
+inline void minimize(Nfa* res, const Nfa &dfa, const ParameterMap& params = {{ "algorithm", "hopcroft" }}) { *res = minimize(dfa, params); }
+
+inline void make_minimal_dfa(Nfa* res, const Nfa &nfa, const ParameterMap& params = {{ "algorithm", "brzozowski" }}) { *res = make_minimal_dfa(nfa, params); }
 
 inline void determinize(Nfa* result, const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr) {
     *result = determinize(aut, subset_map);

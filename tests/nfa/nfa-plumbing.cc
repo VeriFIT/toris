@@ -109,7 +109,7 @@ TEST_CASE("Mata::nfa::Plumbing") {
 
     SECTION("Mata::nfa::Plumbing::minimize") {
         FILL_WITH_AUT_A(lhs);
-        mata::nfa::plumbing::minimize(&result, lhs);
+        mata::nfa::plumbing::make_minimal_dfa(&result, lhs);
         CHECK(!result.is_lang_empty());
     }
 

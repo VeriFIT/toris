@@ -64,12 +64,12 @@ int main(int argc, char *argv[]) {
     TIME_END(reduce);
 
     Nfa minimized_aut;
-    TIME_BEGIN(minimize);
+    TIME_BEGIN(make_minimal_dfa);
     // > START OF PROFILED CODE
     // Only minimize and its callees will be measured
-    mata::nfa::plumbing::minimize(&minimized_aut, aut);
+    mata::nfa::plumbing::make_minimal_dfa(&minimized_aut, aut);
     // > END OF PROFILED CODE
-    TIME_END(minimize);
+    TIME_END(make_minimal_dfa);
 
     Nfa det_aut;
     TIME_BEGIN(determinize);

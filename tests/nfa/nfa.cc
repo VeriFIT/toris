@@ -1017,7 +1017,7 @@ TEST_CASE("mata::nfa::minimize() for profiling", "[.profiling],[minimize]") {
     aut.delta.add(3, 110, 3);
     aut.delta.add(3, 111, 3);
     aut.delta.add(3, 114, 3);
-    minimize(&result, aut);
+    make_minimal_dfa(&result, aut);
 }
 
 TEST_CASE("mata::nfa::construct() correct calls")

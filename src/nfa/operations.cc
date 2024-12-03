@@ -927,7 +927,7 @@ Nfa mata::nfa::algorithms::minimize_brzozowski(const Nfa& aut) {
     return determinize(revert(determinize(revert(aut))));
 }
 
-Nfa mata::nfa::minimize_nfa(const Nfa& aut, const ParameterMap& params) {
+Nfa mata::nfa::make_minimal_dfa(const Nfa& nfa, const ParameterMap& params) {
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
             " requires setting the \"algorithm\" key in the \"params\" argument; "
@@ -943,12 +943,10 @@ Nfa mata::nfa::minimize_nfa(const Nfa& aut, const ParameterMap& params) {
             " received an unknown value for the \"algorithm\" key: " + str_algo);
     }
 
-    return algo(aut);
+    return algo(nfa);
 }
 
-Nfa mata::nfa::minimize_dfa(const Nfa &aut,
-                            const std::optional<AutomatonProperty> property,
-                            const ParameterMap& params)
+Nfa mata::nfa::minimize(const Nfa &dfa, const ParameterMap& params)
 {
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
@@ -969,28 +967,12 @@ Nfa mata::nfa::minimize_dfa(const Nfa &aut,
     }
 
     // Hopcroft algorithm does not work with non-trimmed automata.
-    if (str_algo == "hopcroft" && property != AutomatonProperty::Trimmed) {
-        return algo(Nfa(aut).trim());
+    const BoolVector is_used = dfa.get_useful_states();
+    bool is_trimmed = std::all_of(is_used.begin(), is_used.end(), [](bool b) { return b; });
+    if (str_algo == "hopcroft" && !is_trimmed) {
+        return algo(Nfa(dfa).trim());
     }
-    return algo(aut);
-}
-
-Nfa mata::nfa::minimize(const Nfa &aut,
-                        const AutomatonType type,
-                        const std::optional<AutomatonProperty> property,
-                        const ParameterMap& params)
-{
-    if (type == AutomatonType::Dfa) {
-        return minimize_dfa(aut, property, params);
-    }
-    return minimize_nfa(aut, params);
-}
-
-Nfa mata::nfa::minimize(
-                const Nfa& aut,
-                const ParameterMap& params)
-{
-    return minimize(aut, AutomatonType::Nfa, std::nullopt, params);
+    return algo(dfa);
 }
 
 // Anonymous namespace for the Hopcroft minimization algorithm.
@@ -1338,7 +1320,7 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
         for (const SymbolPost &symbol_post : dfa_trimmed.delta[q]) {
             assert(symbol_post.targets.size() == 1);
             const State target = brp.set_idx[*symbol_post.targets.begin()];
-            mut_state_post.push_back(SymbolPost{ symbol_post.symbol, StateSet{ target } });
+            mut_state_post.emplace_back(SymbolPost{ symbol_post.symbol, StateSet{ target } });
         }
     }
 
