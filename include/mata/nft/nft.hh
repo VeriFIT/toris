@@ -457,6 +457,19 @@ public:
         JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
     /**
+     * @brief Apply @p nfa to @c this backward.
+     *
+     * Identical to `this || Id(nfa)`.
+     * @param nfa NFA to apply.
+     * @param level_to_apply_on Which level to apply the @p nfa on.
+     * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+     *  is interpreted as a sequence repeating the same symbol, or as a single instance of the symbol followed by a
+     *  sequence of @c DONT_CARE symbols.
+     * @return
+     */
+    Nft apply_backward(const nfa::Nfa& nfa, Level level_to_apply_on = 1, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+
+    /**
      * @brief Copy NFT as NFA.
      *
      * Transitions are not updated to only have one level.
