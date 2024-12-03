@@ -352,6 +352,10 @@ Nft Nft::apply(const nfa::Nfa& nfa, Level level_to_apply_on, JumpMode jump_mode)
     return compose(nft_from_nfa, *this, static_cast<Level>(this->num_of_levels) - 1, level_to_apply_on, jump_mode);
 }
 
+Nft Nft::apply_backward(const nfa::Nfa& nfa, Level level_to_apply_on, JumpMode jump_mode) const {
+    Nft nft_from_nfa{ nft::builder::create_from_nfa(nfa, this->num_of_levels) };
+    return compose(*this, nft_from_nfa, level_to_apply_on, 0, jump_mode);
+}
 
 Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const JumpMode jump_mode) {
     assert(0 < nft.num_of_levels);

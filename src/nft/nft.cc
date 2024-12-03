@@ -76,13 +76,13 @@ Nft& Nft::trim(StateRenaming* state_renaming) {
     return *this;
 }
 
-std::string Nft::print_to_DOT(const bool ascii) const {
+std::string Nft::print_to_dot(const bool ascii) const {
     std::stringstream output;
-    print_to_DOT(output, ascii);
+    print_to_dot(output, ascii);
     return output.str();
 }
 
-void Nft::print_to_DOT(std::ostream &output, const bool ascii) const {
+void Nft::print_to_dot(std::ostream &output, const bool ascii) const {
     auto translate_special_symbols = [&](const Symbol symbol) -> std::string {
         if (symbol == EPSILON) {
             return "<eps>";
@@ -405,13 +405,17 @@ State Nft::add_transition(const State source, const std::vector<Symbol>& symbols
     return insert_word(source, symbols);
 }
 
-void Nft::insert_identity(const State state, const std::vector<Symbol> &symbols, const JumpMode jump_mode) {
-    for (const Symbol symbol : symbols) {
-        insert_identity(state, symbol, jump_mode);
-    }
+Nft& Nft::insert_identity(const State state, const std::vector<Symbol> &symbols, const JumpMode jump_mode) {
+    for (const Symbol symbol: symbols) { insert_identity(state, symbol, jump_mode); }
+    return *this;
 }
 
-void Nft::insert_identity(const State state, const Symbol symbol, const JumpMode jump_mode) {
+Nft& Nft::insert_identity(const State state, const Alphabet* alphabet, const JumpMode jump_mode) {
+    for (const Symbol symbol: alphabet->get_alphabet_symbols()) { insert_identity(state, symbol, jump_mode); }
+    return *this;
+}
+
+Nft& Nft::insert_identity(const State state, const Symbol symbol, const JumpMode jump_mode) {
     (void)jump_mode;
     // TODO(nft): Evaluate the performance difference between adding a jump transition and inserting a transition for each level.
     // FIXME(nft): Allow symbol jump transitions?
@@ -421,6 +425,7 @@ void Nft::insert_identity(const State state, const Symbol symbol, const JumpMode
 //    } else {
         insert_word(state, Word(num_of_levels, symbol), state);
 //    }
+    return *this;
 }
 
 void Nft::clear() {
