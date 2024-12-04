@@ -934,7 +934,7 @@ Nfa mata::nfa::make_minimal_dfa(const Nfa& nfa, const ParameterMap& params) {
             "received: " + std::to_string(params));
     }
 
-    // Setting the algorithm. Default is Hopcroft.
+    // Setting the algorithm. Default is Brzozowski.
     const std::string& str_algo = params.at("algorithm");
     decltype(algorithms::minimize_brzozowski)* algo = algorithms::minimize_brzozowski;
     if (str_algo == "brzozowski") { /* default */ }
