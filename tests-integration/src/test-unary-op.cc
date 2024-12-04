@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 
     // minimization test
     Nfa aut_min(aut);
-    aut_min = mata::nfa::minimize(aut_min);
+    aut_min = mata::nfa::make_minimal_dfa(aut_min);
     std::cout << "minimize:" << (mata::nfa::are_equivalent(aut, aut_min) ? "ok" : "fail") << std::endl;
 
     return EXIT_SUCCESS;

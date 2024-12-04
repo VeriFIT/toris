@@ -927,27 +927,54 @@ Nfa mata::nfa::algorithms::minimize_brzozowski(const Nfa& aut) {
     return determinize(revert(determinize(revert(aut))));
 }
 
-Nfa mata::nfa::minimize(
-                const Nfa& aut,
-                const ParameterMap& params)
-{
-    Nfa result;
-    // setting the default algorithm
-    decltype(algorithms::minimize_brzozowski)* algo = algorithms::minimize_brzozowski;
+Nfa mata::nfa::make_minimal_dfa(const Nfa& nfa, const ParameterMap& params) {
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
             " requires setting the \"algorithm\" key in the \"params\" argument; "
             "received: " + std::to_string(params));
     }
 
+    // Setting the algorithm. Default is Brzozowski.
     const std::string& str_algo = params.at("algorithm");
-    if ("brzozowski" == str_algo) {  /* default */ }
+    decltype(algorithms::minimize_brzozowski)* algo = algorithms::minimize_brzozowski;
+    if (str_algo == "brzozowski") { /* default */ }
     else {
-        throw std::runtime_error(std::to_string(__func__) +
-            " received an unknown value of the \"algorithm\" key: " + str_algo);
+        throw std::runtime_error(std::string(__func__) +
+            " received an unknown value for the \"algorithm\" key: " + str_algo);
     }
 
-    return algo(aut);
+    return algo(nfa);
+}
+
+Nfa mata::nfa::minimize(const Nfa &dfa, const ParameterMap& params)
+{
+    if (!haskey(params, "algorithm")) {
+        throw std::runtime_error(std::to_string(__func__) +
+            " requires setting the \"algorithm\" key in the \"params\" argument; "
+            "received: " + std::to_string(params));
+    }
+
+    // Setting the algorithm. Default is Hopcroft.
+    const std::string& str_algo = params.at("algorithm");
+    decltype(algorithms::minimize_hopcroft)* algo = algorithms::minimize_hopcroft;
+    if (str_algo == "hopcroft") {
+        /* default */;
+    } else if (str_algo == "brzozowski") {
+        algo = algorithms::minimize_brzozowski;
+    } else {
+        throw std::runtime_error(std::string(__func__) +
+            " received an unknown value for the \"algorithm\" key: " + str_algo);
+    }
+
+    // Hopcroft algorithm does not work with non-trimmed automata.
+    if (str_algo == "hopcroft") {
+        const BoolVector is_used = dfa.get_useful_states();
+        bool is_trimmed = std::all_of(is_used.begin(), is_used.end(), [](bool b) { return b; });
+        if (!is_trimmed) {
+            return algo(Nfa(dfa).trim());
+        }
+    }
+    return algo(dfa);
 }
 
 // Anonymous namespace for the Hopcroft minimization algorithm.
@@ -1295,7 +1322,7 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
         for (const SymbolPost &symbol_post : dfa_trimmed.delta[q]) {
             assert(symbol_post.targets.size() == 1);
             const State target = brp.set_idx[*symbol_post.targets.begin()];
-            mut_state_post.push_back(SymbolPost{ symbol_post.symbol, StateSet{ target } });
+            mut_state_post.emplace_back(SymbolPost{ symbol_post.symbol, StateSet{ target } });
         }
     }
 
