@@ -5,8 +5,10 @@
 #include <list>
 #include <unordered_set>
 #include <iterator>
+#include <unordered_map>
 
 // MATA headers
+#include "mata/alphabet.hh"
 #include "mata/nfa/delta.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/nfa/nfa.hh"
@@ -54,6 +56,129 @@ namespace {
 
         lts_for_simulation.init();
         return lts_for_simulation.compute_simulation();
+    }
+
+    int index_fn(int alph, int x, int y, size_t alph_size, size_t no_states){
+        return alph + x * alph_size + y * alph_size * no_states;
+    }
+
+    Simlib::Util::BinaryRelation compute_iny_direct_simulation(const Nfa& aut) {
+        // ! Preprocessing
+        Nfa reverted_nfa;
+        std::vector<std::vector<bool>> result_sim_tmp {}; // R_tmp
+        std::vector<std::pair<State, State>> worklist {}; // Worklist
+
+        // Alphabet extraction
+        mata::OnTheFlyAlphabet alph;
+        aut.fill_alphabet(alph);
+        std::vector<Symbol> alph_syms = alph.get_alphabet_symbols().to_vector();
+
+        size_t no_states = aut.num_of_states();
+        size_t matrix_size = no_states * no_states * alph_syms.size();
+
+        std::vector<unsigned> matrix (matrix_size, 0); // Stores the value of cnt()
+        std::vector<unsigned> index_map {}; // Associates every Symbol with unique value
+        std::vector<bool> usage_map (alph_syms.size(), false); // Storing usage of Symbols
+
+        result_sim_tmp.resize(no_states);
+        for (size_t i = 0; i < no_states; i++){
+            result_sim_tmp[i].resize(no_states, true);
+        }
+
+        // This is very memory inefficient
+        for (size_t x = 0; x < alph_syms.size(); x++){ // Indexing every Symbol with an number
+            if (index_map.size() <= alph_syms[x]){
+                index_map.resize(alph_syms[x] + 1 ,0);
+            }
+            index_map[alph_syms[x]] = x;
+        }
+
+        reverted_nfa = revert(aut); // Reverted NFA
+        // ! End of preprocessing
+
+        // ! Initial refinement
+        for (size_t p = 0; p < no_states; p++) {
+            for (size_t q = 0; q < no_states; q++) {
+                // Check final
+                if (aut.final.contains(p) && !aut.final.contains(q)) {
+                    if (result_sim_tmp[p][q] != false) {
+                        worklist.push_back(std::pair(p,q)); // worklist append
+                        result_sim_tmp[p][q] = false;
+                    }
+                }
+
+                auto symbol_q = aut.delta[q].begin();
+                auto sym_end = aut.delta[q].end();
+                for (size_t x = 0; x < alph_syms.size(); x++) {
+                    if (symbol_q == sym_end){ // If we searched all symbols
+                        break;
+                    }
+
+                    size_t q_size;
+                    Symbol active_sym = (*symbol_q).symbol; // Get the active symbol
+                    usage_map[index_map[active_sym]] = true; // Mark the symbol as used
+
+                    q_size = (*symbol_q).num_of_targets(); // Compute lenght and store it
+                    matrix[index_fn(index_map[active_sym], p, q, alph_syms.size(), no_states)] = q_size;
+                    std::advance(symbol_q, 1);
+                }
+
+                auto active_sym = aut.delta[p].begin();
+                sym_end = aut.delta[p].end();
+                for(size_t x = 0; x < alph_syms.size(); x++){
+                    if (active_sym == sym_end){ // If we searched all symbols
+                        break;
+                    }
+                    bool is_present = usage_map[index_map[(*active_sym).symbol]]; // get the index of the symbol
+                    if (is_present == false){
+                        if (result_sim_tmp[p][q] != false) {
+                                worklist.push_back(std::pair(p,q)); // worklist append
+                                result_sim_tmp[p][q] = false;
+                        }
+                    }
+                    std::advance(active_sym, 1);
+                }
+
+                std::fill(usage_map.begin(), usage_map.end(), false);
+            }
+        }
+        // ! End of initial refinement
+
+        // ! Propagate until fixpoint
+        size_t worklist_size;
+        std::pair<State, State> working_pair;
+        while ((worklist_size = worklist.size()) != 0) {
+            working_pair = worklist[worklist_size - 1];
+            worklist.pop_back();
+
+            auto symbol_q_ = reverted_nfa.delta[working_pair.second].begin();
+            auto sym_end = reverted_nfa.delta[working_pair.second].end();
+            for (size_t x = 0; x < alph_syms.size(); x++) {
+                if (symbol_q_ == sym_end){ // If we searched all symbols
+                    break;
+                }
+                Symbol active_sym = (*symbol_q_).symbol;
+                for (State q: (*symbol_q_).targets.to_vector()) {
+                    if (--matrix[index_fn(index_map[active_sym], working_pair.first, q, alph_syms.size(), no_states)] == 0) {
+                        auto symbol_p_ = reverted_nfa.delta[working_pair.first].find(active_sym);
+                        if (symbol_p_ == reverted_nfa.delta[working_pair.first].end()) {
+                            continue;
+                        }
+                        for (State p: (*symbol_p_).targets.to_vector()) {
+                            if (result_sim_tmp[p][q] != false) {
+                                worklist.push_back(std::pair(p,q)); // worklist append
+                                result_sim_tmp[p][q] = false;
+                            }
+                        }
+                    }
+                }
+                std::advance(symbol_q_, 1);
+            }
+        }
+        // ! End of Propagate until fixpoint
+
+        Simlib::Util::BinaryRelation tmp {result_sim_tmp};
+        return tmp;
     }
 
     Nfa reduce_size_by_simulation(const Nfa& aut, StateRenaming &state_renaming) {
@@ -1343,6 +1468,9 @@ Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& 
     const std::string& direction = params.at("direction");
     if ("simulation" == relation && direction == "forward") {
         return compute_fw_direct_simulation(aut);
+    }
+    else if ("simulation" == relation && direction == "iny") {
+        return compute_iny_direct_simulation(aut);
     }
     else {
         throw std::runtime_error(std::to_string(__func__) +
