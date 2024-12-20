@@ -85,7 +85,7 @@ namespace {
             result_sim_tmp[i].resize(no_states, true);
         }
 
-        // TODO this is very memory inefficient
+        // This is very memory inefficient
         for (size_t x = 0; x < alph_syms.size(); x++){ // Indexing every Symbol with an number
             if (index_map.size() <= alph_syms[x]){
                 index_map.resize(alph_syms[x] + 1 ,0);
@@ -106,25 +106,40 @@ namespace {
                         result_sim_tmp[p][q] = false;
                     }
                 }
-                for (SymbolPost symbol_q : aut.delta[q]) {
+
+                auto symbol_q = aut.delta[q].begin();
+                auto sym_end = aut.delta[q].end();
+                for (size_t x = 0; x < alph_syms.size(); x++) {
+                    if (symbol_q == sym_end){ // If we searched all symbols
+                        break;
+                    }
+
                     size_t q_size;
-                    Symbol active_sym = symbol_q.symbol; // Get the active symbol
+                    Symbol active_sym = (*symbol_q).symbol; // Get the active symbol
                     usage_map[index_map[active_sym]] = true; // Mark the symbol as used
 
-                    q_size = symbol_q.num_of_targets(); // Compute lenght and store it
+                    q_size = (*symbol_q).num_of_targets(); // Compute lenght and store it
                     matrix[index_fn(index_map[active_sym], p, q, alph_syms.size(), no_states)] = q_size;
+                    std::advance(symbol_q, 1);
                 }
-                for(SymbolPost active_sym : aut.delta[p]){
-                    bool is_present = usage_map[index_map[active_sym.symbol]]; // get the index of the symbol
+
+                auto active_sym = aut.delta[p].begin();
+                sym_end = aut.delta[p].end();
+                for(size_t x = 0; x < alph_syms.size(); x++){
+                    if (active_sym == sym_end){ // If we searched all symbols
+                        break;
+                    }
+                    bool is_present = usage_map[index_map[(*active_sym).symbol]]; // get the index of the symbol
                     if (is_present == false){
                         if (result_sim_tmp[p][q] != false) {
                                 worklist.push_back(std::pair(p,q)); // worklist append
                                 result_sim_tmp[p][q] = false;
                         }
                     }
+                    std::advance(active_sym, 1);
                 }
-                usage_map.clear(); // Reset the usage map
-                usage_map.resize(alph_syms.size(), false);
+
+                std::fill(usage_map.begin(), usage_map.end(), false);
             }
         }
         // ! End of initial refinement
@@ -136,9 +151,14 @@ namespace {
             working_pair = worklist[worklist_size - 1];
             worklist.pop_back();
 
-            for (SymbolPost symbol_q_ : reverted_nfa.delta[working_pair.second]) {
-                Symbol active_sym = symbol_q_.symbol;
-                for (State q: symbol_q_.targets.to_vector()) {
+            auto symbol_q_ = reverted_nfa.delta[working_pair.second].begin();
+            auto sym_end = reverted_nfa.delta[working_pair.second].end();
+            for (size_t x = 0; x < alph_syms.size(); x++) {
+                if (symbol_q_ == sym_end){ // If we searched all symbols
+                    break;
+                }
+                Symbol active_sym = (*symbol_q_).symbol;
+                for (State q: (*symbol_q_).targets.to_vector()) {
                     if (--matrix[index_fn(index_map[active_sym], working_pair.first, q, alph_syms.size(), no_states)] == 0) {
                         auto symbol_p_ = reverted_nfa.delta[working_pair.first].find(active_sym);
                         if (symbol_p_ == reverted_nfa.delta[working_pair.first].end()) {
@@ -152,6 +172,7 @@ namespace {
                         }
                     }
                 }
+                std::advance(symbol_q_, 1);
             }
         }
         // ! End of Propagate until fixpoint
